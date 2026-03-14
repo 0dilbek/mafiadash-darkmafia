@@ -1,0 +1,85 @@
+{% extends 'bot/base.html' %}
+{% block title %}Chatlar - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-chat-dots me-2" style="color:#5288c1"></i>Chatlar</h1>
+    <p>Jami {{ chats.paginator.count }} ta chat</p>
+</div>
+
+<div class="tg-card mb-4" style="padding:14px 16px">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <form class="d-flex gap-2 flex-grow-1" method="get">
+            <input type="text" name="q" class="tg-search" placeholder="Nomi yoki Chat ID bo'yicha qidirish..." value="{{ query }}">
+            {% if type_filter %}<input type="hidden" name="type" value="{{ type_filter }}">{% endif %}
+            <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
+            {% if query or type_filter %}<a href="{% url 'chats' %}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
+        </form>
+        <div class="filter-tabs">
+            <a href="{% url 'chats' %}{% if query %}?q={{ query }}{% endif %}" class="filter-tab {% if not type_filter %}active{% endif %}">Barchasi</a>
+            <a href="?type=group{% if query %}&q={{ query }}{% endif %}" class="filter-tab {% if type_filter == 'group' %}active{% endif %}">Guruh</a>
+            <a href="?type=supergroup{% if query %}&q={{ query }}{% endif %}" class="filter-tab {% if type_filter == 'supergroup' %}active{% endif %}">Supergroup</a>
+        </div>
+    </div>
+</div>
+
+<div class="tg-card">
+    <div class="tg-table-wrap"><table class="tg-table">
+        <thead>
+            <tr><th>Chat</th><th>Chat ID</th><th>Tur</th><th>Invite link</th><th>Qo'shilgan</th></tr>
+        </thead>
+        <tbody>
+            {% for chat in chats %}
+            <tr>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="user-avatar" style="background:linear-gradient(135deg,#1a3d6b,#5288c1);border-radius:10px">
+                            <i class="bi bi-people" style="font-size:1rem"></i>
+                        </div>
+                        <span style="font-weight:600;color:#f5f5f5">{{ chat.title }}</span>
+                    </div>
+                </td>
+                <td><code>{{ chat.chat_id }}</code></td>
+                <td>
+                    {% if chat.type == 'supergroup' %}
+                    <span style="background:#162a3d;color:#71bafa;padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600">Supergroup</span>
+                    {% else %}
+                    <span style="background:#1a2d1a;color:#4dbe68;padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600">Guruh</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if chat.invite_link %}
+                    <a href="{{ chat.invite_link }}" target="_blank" style="font-size:0.82rem">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Havola
+                    </a>
+                    {% else %}
+                    <span style="color:#708499;font-size:0.82rem">—</span>
+                    {% endif %}
+                </td>
+                <td style="color:#708499;font-size:0.82rem">{{ chat.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" style="text-align:center;color:#708499;padding:32px">Chat topilmadi</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+
+{% if chats.has_other_pages %}
+<div class="tg-pagination">
+    {% if chats.has_previous %}
+    <a class="tg-page-btn" href="?page={{ chats.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    {% for num in chats.paginator.page_range %}
+        {% if chats.number == num %}
+        <span class="tg-page-btn active">{{ num }}</span>
+        {% elif num > chats.number|add:'-3' and num < chats.number|add:'3' %}
+        <a class="tg-page-btn" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if chats.has_next %}
+    <a class="tg-page-btn" href="?page={{ chats.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

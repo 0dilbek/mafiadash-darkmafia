@@ -1,0 +1,139 @@
+{% extends 'bot/base.html' %}
+{% block title %}Dashboard - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-speedometer2 me-2" style="color:#5288c1"></i>Dashboard</h1>
+    <p>Bot statistikasi va umumiy ma'lumotlar</p>
+</div>
+
+<!-- Stat cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background:#1a3049"><i class="bi bi-people" style="color:#5288c1"></i></div>
+            <div class="value">{{ total_users }}</div>
+            <div class="label">Jami foydalanuvchilar</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background:#3d2a0f"><i class="bi bi-star" style="color:#ffd700"></i></div>
+            <div class="value" style="color:#ffd700">{{ total_vip }}</div>
+            <div class="label">VIP foydalanuvchilar</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background:#1a2d1a"><i class="bi bi-chat-dots" style="color:#4dbe68"></i></div>
+            <div class="value" style="color:#4dbe68">{{ total_chats }}</div>
+            <div class="label">Jami guruhlar</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="icon" style="background:#162a3d"><i class="bi bi-arrow-left-right" style="color:#71bafa"></i></div>
+            <div class="value" style="color:#71bafa">{{ total_transfers }}</div>
+            <div class="label">Jami transferlar</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Top 10 o'yinchi -->
+    <div class="col-md-6">
+        <div class="tg-card">
+            <div class="tg-card-header">
+                <div class="title"><i class="bi bi-trophy" style="color:#f5a623"></i> Top 10 O'yinchi</div>
+                <a href="{% url 'top' %}" class="tg-btn tg-btn-sm tg-btn-ghost">Barchasi</a>
+            </div>
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead><tr><th>#</th><th>Foydalanuvchi</th><th>G'alaba</th><th>O'yinlar</th></tr></thead>
+                <tbody>
+                    {% for p in top_players %}
+                    <tr>
+                        <td>
+                            {% if forloop.counter == 1 %}🥇
+                            {% elif forloop.counter == 2 %}🥈
+                            {% elif forloop.counter == 3 %}🥉
+                            {% else %}<span class="rank-badge">{{ forloop.counter }}</span>{% endif %}
+                        </td>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">{{ p.user.full_name|default:p.user.mention|striptags|slice:":1"|upper }}</div>
+                                <a href="{% url 'user_detail' p.user.id %}" class="user-name">{{ p.user.full_name|default:p.user.mention|striptags|truncatechars:20 }}</a>
+                            </div>
+                        </td>
+                        <td><span class="tg-badge tg-badge-win">🏆 {{ p.wins }}</span></td>
+                        <td style="color:#708499">{{ p.games_count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;color:#708499;padding:24px">Ma'lumot yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    <!-- Eng boylar -->
+    <div class="col-md-6">
+        <div class="tg-card">
+            <div class="tg-card-header">
+                <div class="title"><i class="bi bi-currency-dollar" style="color:#4dbe68"></i> Eng Boy O'yinchilar</div>
+            </div>
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead><tr><th>#</th><th>Foydalanuvchi</th><th>Dollar</th><th>Diamond</th></tr></thead>
+                <tbody>
+                    {% for p in richest %}
+                    <tr>
+                        <td><span class="rank-badge">{{ forloop.counter }}</span></td>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar">{{ p.user.full_name|default:p.user.mention|striptags|slice:":1"|upper }}</div>
+                                <a href="{% url 'user_detail' p.user.id %}" class="user-name">{{ p.user.full_name|default:p.user.mention|striptags|truncatechars:20 }}</a>
+                            </div>
+                        </td>
+                        <td><span class="tg-badge tg-badge-dollar">💵 {{ p.dollar }}</span></td>
+                        <td><span class="tg-badge tg-badge-diamond">💎 {{ p.diamond }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;color:#708499;padding:24px">Ma'lumot yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    <!-- So'nggi transferlar -->
+    <div class="col-12">
+        <div class="tg-card">
+            <div class="tg-card-header">
+                <div class="title"><i class="bi bi-arrow-left-right" style="color:#71bafa"></i> So'nggi Transferlar</div>
+                <a href="{% url 'transfers' %}" class="tg-btn tg-btn-sm tg-btn-ghost">Barchasi</a>
+            </div>
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead><tr><th>Kim dan</th><th>Kimga</th><th>Miqdor</th><th>Tur</th><th>Vaqt</th></tr></thead>
+                <tbody>
+                    {% for t in recent_transfers %}
+                    <tr>
+                        <td><a href="{% url 'user_detail' t.from_user.id %}">{{ t.from_user.full_name|default:t.from_user.mention|striptags|truncatechars:18 }}</a></td>
+                        <td><a href="{% url 'user_detail' t.to_user.id %}">{{ t.to_user.full_name|default:t.to_user.mention|striptags|truncatechars:18 }}</a></td>
+                        <td><strong style="color:#f5f5f5">{{ t.amount }}</strong></td>
+                        <td>
+                            {% if t.type == 'diamond' %}
+                                <span class="tg-badge tg-badge-diamond">💎 Diamond</span>
+                            {% else %}
+                                <span class="tg-badge tg-badge-dollar">💵 Dollar</span>
+                            {% endif %}
+                        </td>
+                        <td style="color:#708499;font-size:0.82rem">{{ t.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" style="text-align:center;color:#708499;padding:24px">Ma'lumot yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

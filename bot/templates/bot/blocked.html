@@ -1,0 +1,114 @@
+{% extends 'bot/base.html' %}
+{% block title %}Bloklangan foydalanuvchilar - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-slash-circle me-2" style="color:#f44336"></i>Bloklangan foydalanuvchilar</h1>
+    <p>Jami {{ blocked.paginator.count }} ta bloklangan foydalanuvchi</p>
+</div>
+
+{% for msg in messages %}
+<div style="
+    background: {% if msg.tags == 'success' %}#1a3d2a{% elif msg.tags == 'error' %}#3d1212{% else %}#3d2a0f{% endif %};
+    color: {% if msg.tags == 'success' %}#4dbe68{% elif msg.tags == 'error' %}#f44336{% else %}#f5a623{% endif %};
+    border: 1px solid {% if msg.tags == 'success' %}#2a6040{% elif msg.tags == 'error' %}#6a2020{% else %}#6a4a10{% endif %};
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.9rem;
+">
+    <i class="bi bi-{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'error' %}x-circle{% else %}exclamation-circle{% endif %} me-2"></i>{{ msg }}
+</div>
+{% endfor %}
+
+<div class="row g-4 mb-4">
+    <!-- Yangi foydalanuvchini bloklash formasi -->
+    <div class="col-md-4">
+        <div class="tg-card" style="padding:20px">
+            <div style="font-size:0.85rem;font-weight:600;color:#adb5bd;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em">
+                <i class="bi bi-person-slash me-2" style="color:#f44336"></i>Foydalanuvchini bloklash
+            </div>
+            <form method="post" action="{% url 'block_user' %}">
+                {% csrf_token %}
+                <input
+                    type="text"
+                    name="user_id"
+                    class="tg-search"
+                    placeholder="Telegram ID, ism yoki @mention"
+                    style="margin-bottom:10px"
+                    required
+                >
+                <button type="submit" class="tg-btn" style="width:100%;background:#8b1a1a;justify-content:center;display:flex;align-items:center;gap:6px">
+                    <i class="bi bi-slash-circle"></i> Bloklash
+                </button>
+            </form>
+            <div style="margin-top:12px;font-size:0.78rem;color:#708499;line-height:1.5">
+                Telegram ID, to'liq ism yoki @username orqali qidirish mumkin.
+            </div>
+        </div>
+    </div>
+
+    <!-- Qidiruv -->
+    <div class="col-md-8">
+        <div class="tg-card" style="padding:14px 16px;margin-bottom:16px">
+            <form class="d-flex gap-2" method="get">
+                <input type="text" name="q" class="tg-search" placeholder="Bloklangan foydalanuvchilar orasida qidirish..." value="{{ query }}">
+                <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
+                {% if query %}<a href="{% url 'blocked' %}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
+            </form>
+        </div>
+
+        <div class="tg-card">
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead>
+                    <tr><th>Foydalanuvchi</th><th>Telegram ID</th><th>Bloklangan sana</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for b in blocked %}
+                    <tr>
+                        <td>
+                            <div class="user-info">
+                                <div class="user-avatar" style="background:linear-gradient(135deg,#6a1a1a,#c0392b)">
+                                    {{ b.user.full_name|default:b.user.mention|striptags|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <a href="{% url 'user_detail' b.user.id %}" class="user-name">{{ b.user.full_name|default:"-" }}</a>
+                                    <div class="user-id">{{ b.user.mention|striptags|truncatechars:20 }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><code>{{ b.user.user_id }}</code></td>
+                        <td style="color:#708499;font-size:0.82rem">{{ b.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'unblock_user' b.id %}" style="display:inline" onsubmit="return confirm('{{ b.user.full_name|default:b.user.mention|striptags|truncatechars:20 }} ni blokdan chiqarishni tasdiqlaysizmi?')">
+                                {% csrf_token %}
+                                <button type="submit" class="tg-btn tg-btn-sm" style="background:#1a3d2a;color:#4dbe68;border:1px solid #2a6040">
+                                    <i class="bi bi-unlock me-1"></i>Ochish
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;color:#708499;padding:32px">Bloklangan foydalanuvchi yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+</div>
+
+{% if blocked.has_other_pages %}
+<div class="tg-pagination">
+    {% if blocked.has_previous %}
+    <a class="tg-page-btn" href="?page={{ blocked.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    {% for num in blocked.paginator.page_range %}
+        {% if blocked.number == num %}
+        <span class="tg-page-btn active">{{ num }}</span>
+        {% elif num > blocked.number|add:'-3' and num < blocked.number|add:'3' %}
+        <a class="tg-page-btn" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if blocked.has_next %}
+    <a class="tg-page-btn" href="?page={{ blocked.next_page_number }}{% if query %}&q={{ query }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

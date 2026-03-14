@@ -1,0 +1,198 @@
+{% extends 'bot/base.html' %}
+{% block title %}{{ user.full_name }} - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center gap-3">
+    <a href="{% url 'users' %}" class="tg-btn tg-btn-ghost tg-btn-sm"><i class="bi bi-arrow-left"></i></a>
+    <div>
+        <h1 style="margin:0;font-size:1.3rem">
+            {{ user.full_name|default:user.mention|striptags|truncatechars:30 }}
+            {% if is_vip %}<span class="tg-badge tg-badge-vip ms-2">⭐ VIP</span>{% endif %}
+            {% if is_blocked %}<span class="tg-badge tg-badge-blocked ms-2">🚫 Bloklangan</span>{% endif %}
+        </h1>
+        <p style="margin:2px 0 0;color:#708499;font-size:0.85rem">{{ user.mention|striptags|truncatechars:30 }} · <code>{{ user.user_id }}</code> · {% if user.lang == 'uz' %}🇺🇿 O'zbek{% elif user.lang == 'ru' %}🇷🇺 Ruscha{% elif user.lang == 'en' %}🇬🇧 English{% elif user.lang == 'kk' %}🇰🇿 Qozoq{% else %}{{ user.lang }}{% endif %}</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Profil kartasi -->
+    {% if profile %}
+    <div class="col-12">
+        <div class="tg-card">
+            <div class="tg-card-header"><div class="title"><i class="bi bi-bar-chart" style="color:#5288c1"></i> Profil statistikasi</div></div>
+            <div style="padding:20px">
+                <div class="row g-3 mb-4">
+                    <div class="col-4 col-md-2">
+                        <div style="text-align:center;background:#1c2631;border-radius:12px;padding:16px 10px">
+                            <div style="font-size:1.5rem;font-weight:700;color:#4dbe68">{{ profile.dollar }}</div>
+                            <div style="font-size:0.75rem;color:#708499;margin-top:4px">💵 Dollar</div>
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <div style="text-align:center;background:#1c2631;border-radius:12px;padding:16px 10px">
+                            <div style="font-size:1.5rem;font-weight:700;color:#71bafa">{{ profile.diamond }}</div>
+                            <div style="font-size:0.75rem;color:#708499;margin-top:4px">💎 Diamond</div>
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <div style="text-align:center;background:#1c2631;border-radius:12px;padding:16px 10px">
+                            <div style="font-size:1.5rem;font-weight:700;color:#f5a623">{{ profile.wins }}</div>
+                            <div style="font-size:0.75rem;color:#708499;margin-top:4px">🏆 G'alaba</div>
+                        </div>
+                    </div>
+                    <div class="col-4 col-md-2">
+                        <div style="text-align:center;background:#1c2631;border-radius:12px;padding:16px 10px">
+                            <div style="font-size:1.5rem;font-weight:700;color:#f5f5f5">{{ profile.games_count }}</div>
+                            <div style="font-size:0.75rem;color:#708499;margin-top:4px">🎮 O'yinlar</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-size:0.8rem;font-weight:600;color:#708499;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Qurollar va himoyalar</div>
+                <div class="row g-2">
+                    {% for item in profile.himoya|make_list %}{% endfor %}
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Himoya</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.himoya }}</span>
+                                {% if profile.on_himoya %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Hujjat</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.hujjat }}</span>
+                                {% if profile.on_hujjat %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Miltiq</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.miltiq }}</span>
+                                {% if profile.on_miltiq %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Maska</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.maska }}</span>
+                                {% if profile.on_maska %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Qotildan himoya</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.qotildan_himoya }}</span>
+                                {% if profile.on_qotildan_himoya %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Doridan himoya</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.doridan_himoya }}</span>
+                                {% if profile.on_doridan_himoya %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Osishdan himoya</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.osishdan_himoya }}</span>
+                                {% if profile.on_osishdan_himoya %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div style="background:#1c2631;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center">
+                            <span style="color:#adb5bd;font-size:0.85rem">Verbana</span>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span style="color:#f5f5f5;font-weight:600">{{ profile.verbana }}</span>
+                                {% if profile.on_verbana %}<span class="tg-on">ON</span>{% else %}<span class="tg-off">OFF</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Transferlar -->
+    <div class="col-md-6">
+        <div class="tg-card">
+            <div class="tg-card-header"><div class="title"><i class="bi bi-arrow-up-right" style="color:#f44336"></i> Yuborilgan</div></div>
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead><tr><th>Kimga</th><th>Miqdor</th><th>Tur</th><th>Vaqt</th></tr></thead>
+                <tbody>
+                    {% for t in transfers_sent %}
+                    <tr>
+                        <td><a href="{% url 'user_detail' t.to_user.id %}">{{ t.to_user.full_name|default:t.to_user.mention }}</a></td>
+                        <td style="font-weight:600;color:#f5f5f5">{{ t.amount }}</td>
+                        <td>{% if t.type == 'diamond' %}<span class="tg-badge tg-badge-diamond">💎</span>{% else %}<span class="tg-badge tg-badge-dollar">💵</span>{% endif %}</td>
+                        <td style="color:#708499;font-size:0.8rem">{{ t.created_at|date:"d.m H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;color:#708499;padding:20px">Transfer yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="tg-card">
+            <div class="tg-card-header"><div class="title"><i class="bi bi-arrow-down-left" style="color:#4dbe68"></i> Qabul qilingan</div></div>
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead><tr><th>Kim dan</th><th>Miqdor</th><th>Tur</th><th>Vaqt</th></tr></thead>
+                <tbody>
+                    {% for t in transfers_received %}
+                    <tr>
+                        <td><a href="{% url 'user_detail' t.from_user.id %}">{{ t.from_user.full_name|default:t.from_user.mention }}</a></td>
+                        <td style="font-weight:600;color:#f5f5f5">{{ t.amount }}</td>
+                        <td>{% if t.type == 'diamond' %}<span class="tg-badge tg-badge-diamond">💎</span>{% else %}<span class="tg-badge tg-badge-dollar">💵</span>{% endif %}</td>
+                        <td style="color:#708499;font-size:0.8rem">{{ t.created_at|date:"d.m H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" style="text-align:center;color:#708499;padding:20px">Transfer yo'q</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+
+    {% if pairs %}
+    <div class="col-12">
+        <div class="tg-card">
+            <div class="tg-card-header"><div class="title"><i class="bi bi-heart" style="color:#f44336"></i> Paralar</div></div>
+            <div class="tg-table-wrap"><table class="tg-table">
+                <thead><tr><th>Juftlik</th><th>Sana</th></tr></thead>
+                <tbody>
+                    {% for p in pairs %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'user_detail' p.user1.id %}">{{ p.user1.full_name|default:p.user1.mention }}</a>
+                            <span style="color:#708499;margin:0 8px">❤️</span>
+                            <a href="{% url 'user_detail' p.user2.id %}">{{ p.user2.full_name|default:p.user2.mention }}</a>
+                        </td>
+                        <td style="color:#708499;font-size:0.82rem">{{ p.created_at|date:"d.m.Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table></div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

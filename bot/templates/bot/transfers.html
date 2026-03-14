@@ -1,0 +1,63 @@
+{% extends 'bot/base.html' %}
+{% block title %}Transferlar - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-arrow-left-right me-2" style="color:#71bafa"></i>Transferlar</h1>
+    <p>Jami {{ transfers.paginator.count }} ta transfer</p>
+</div>
+
+<div class="tg-card mb-4" style="padding:14px 16px">
+    <div class="filter-tabs">
+        <a href="{% url 'transfers' %}" class="filter-tab {% if not type_filter %}active{% endif %}">Barchasi</a>
+        <a href="?type=dollar" class="filter-tab {% if type_filter == 'dollar' %}active{% endif %}">💵 Dollar</a>
+        <a href="?type=diamond" class="filter-tab {% if type_filter == 'diamond' %}active{% endif %}">💎 Diamond</a>
+    </div>
+</div>
+
+<div class="tg-card">
+    <div class="tg-table-wrap"><table class="tg-table">
+        <thead>
+            <tr><th>ID</th><th>Kim dan</th><th>Kimga</th><th>Miqdor</th><th>Tur</th><th>Vaqt</th></tr>
+        </thead>
+        <tbody>
+            {% for t in transfers %}
+            <tr>
+                <td style="color:#708499;font-size:0.8rem">#{{ t.id }}</td>
+                <td><a href="{% url 'user_detail' t.from_user.id %}">{{ t.from_user.full_name|default:t.from_user.mention|striptags|truncatechars:18 }}</a></td>
+                <td><a href="{% url 'user_detail' t.to_user.id %}">{{ t.to_user.full_name|default:t.to_user.mention|striptags|truncatechars:18 }}</a></td>
+                <td style="font-weight:600;color:#f5f5f5">{{ t.amount }}</td>
+                <td>
+                    {% if t.type == 'diamond' %}
+                        <span class="tg-badge tg-badge-diamond">💎 Diamond</span>
+                    {% else %}
+                        <span class="tg-badge tg-badge-dollar">💵 Dollar</span>
+                    {% endif %}
+                </td>
+                <td style="color:#708499;font-size:0.82rem">{{ t.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;color:#708499;padding:32px">Transfer topilmadi</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+
+{% if transfers.has_other_pages %}
+<div class="tg-pagination">
+    {% if transfers.has_previous %}
+    <a class="tg-page-btn" href="?page={{ transfers.previous_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    {% for num in transfers.paginator.page_range %}
+        {% if transfers.number == num %}
+        <span class="tg-page-btn active">{{ num }}</span>
+        {% elif num > transfers.number|add:'-3' and num < transfers.number|add:'3' %}
+        <a class="tg-page-btn" href="?page={{ num }}{% if type_filter %}&type={{ type_filter }}{% endif %}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if transfers.has_next %}
+    <a class="tg-page-btn" href="?page={{ transfers.next_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'bot/base.html' %}
+{% block title %}Top O'yinchilar - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-trophy me-2" style="color:#f5a623"></i>Top O'yinchilar</h1>
+    <p>G'alabalar soni bo'yicha reyting</p>
+</div>
+
+<div class="tg-card">
+    <div class="tg-table-wrap"><table class="tg-table">
+        <thead>
+            <tr><th>#</th><th>Foydalanuvchi</th><th>G'alaba</th><th>O'yinlar</th><th>Dollar</th><th>Diamond</th></tr>
+        </thead>
+        <tbody>
+            {% for p in profiles %}
+            <tr>
+                <td>
+                    {% with forloop.counter|add:profiles.start_index|add:"-1" as rank %}
+                        {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% elif rank == 3 %}🥉
+                        {% else %}<span class="rank-badge">{{ rank }}</span>{% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    <div class="user-info">
+                        <div class="user-avatar">{{ p.user.full_name|default:p.user.mention|striptags|slice:":1"|upper }}</div>
+                        <a href="{% url 'user_detail' p.user.id %}" class="user-name">{{ p.user.full_name|default:p.user.mention|striptags|truncatechars:20 }}</a>
+                    </div>
+                </td>
+                <td><span class="tg-badge tg-badge-win">🏆 {{ p.wins }}</span></td>
+                <td style="color:#708499">{{ p.games_count }}</td>
+                <td><span class="tg-badge tg-badge-dollar">💵 {{ p.dollar }}</span></td>
+                <td><span class="tg-badge tg-badge-diamond">💎 {{ p.diamond }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" style="text-align:center;color:#708499;padding:32px">Ma'lumot yo'q</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+
+{% if profiles.has_other_pages %}
+<div class="tg-pagination">
+    {% if profiles.has_previous %}
+    <a class="tg-page-btn" href="?page={{ profiles.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    {% for num in profiles.paginator.page_range %}
+        {% if profiles.number == num %}
+        <span class="tg-page-btn active">{{ num }}</span>
+        {% elif num > profiles.number|add:'-3' and num < profiles.number|add:'3' %}
+        <a class="tg-page-btn" href="?page={{ num }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if profiles.has_next %}
+    <a class="tg-page-btn" href="?page={{ profiles.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

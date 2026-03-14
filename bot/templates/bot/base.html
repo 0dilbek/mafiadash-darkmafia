@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MafiaDash{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #17212b;
+            color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            min-height: 100vh;
+            background: #232e3c;
+            position: fixed;
+            top: 0; left: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #1c2733;
+            z-index: 1040;
+            transition: transform .25s ease;
+        }
+        .sidebar-brand {
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #1c2733;
+        }
+        .sidebar-brand .logo {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #2b5278, #5288c1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #fff;
+            flex-shrink: 0;
+        }
+        .sidebar-brand .name { font-size: 1.1rem; font-weight: 700; color: #f5f5f5; }
+        .sidebar-brand .sub { font-size: 0.75rem; color: #708499; }
+
+        .nav-section { padding: 8px 0; }
+        .nav-section-title { font-size: 0.7rem; font-weight: 600; color: #708499; text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 20px 4px; }
+        .nav-item { padding: 0 8px; }
+        .nav-link {
+            color: #adb5bd;
+            padding: 10px 12px;
+            border-radius: 10px;
+            display: flex; align-items: center; gap: 12px;
+            transition: all .15s;
+            font-size: 0.95rem;
+        }
+        .nav-link:hover { color: #f5f5f5; background: #2b3a4a; }
+        .nav-link.active { color: #5288c1; background: #1e3349; font-weight: 500; }
+        .nav-link i { font-size: 1.1rem; width: 22px; text-align: center; }
+
+        /* Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 1030;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        /* Top navbar (mobile only) */
+        .top-navbar {
+            display: none;
+            background: #232e3c;
+            border-bottom: 1px solid #1c2733;
+            padding: 12px 16px;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+        .hamburger-btn {
+            background: none;
+            border: none;
+            color: #adb5bd;
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        .hamburger-btn:hover { color: #f5f5f5; }
+        .top-navbar .brand-name { font-size: 1rem; font-weight: 700; color: #f5f5f5; }
+
+        /* Main */
+        .main-content { margin-left: 260px; padding: 28px 32px; min-height: 100vh; }
+
+        /* Page header */
+        .page-header { margin-bottom: 24px; }
+        .page-header h1 { font-size: 1.4rem; font-weight: 700; color: #f5f5f5; margin: 0; }
+        .page-header p { color: #708499; font-size: 0.875rem; margin: 4px 0 0; }
+
+        /* Stat cards */
+        .stat-card {
+            background: #232e3c;
+            border: 1px solid #1c2733;
+            border-radius: 14px;
+            padding: 20px;
+            transition: transform .2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card .icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; margin-bottom: 14px;
+        }
+        .stat-card .value { font-size: 1.8rem; font-weight: 700; color: #f5f5f5; line-height: 1; }
+        .stat-card .label { font-size: 0.82rem; color: #708499; margin-top: 4px; }
+
+        /* Cards */
+        .tg-card {
+            background: #232e3c;
+            border: 1px solid #1c2733;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .tg-card-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid #1c2733;
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 0.9rem; font-weight: 600; color: #adb5bd;
+        }
+        .tg-card-header .title { display: flex; align-items: center; gap: 8px; }
+
+        /* Table wrapper for horizontal scroll */
+        .tg-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+        /* Table */
+        .tg-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+        .tg-table thead th {
+            background: #1c2631;
+            padding: 10px 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #708499;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #1c2733;
+            white-space: nowrap;
+        }
+        .tg-table tbody td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #1c2733;
+            font-size: 0.9rem;
+            color: #d0d9e3;
+            vertical-align: middle;
+        }
+        .tg-table tbody tr:last-child td { border-bottom: none; }
+        .tg-table tbody tr:hover { background: #1e2d3d; }
+
+        /* Avatar */
+        .user-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: linear-gradient(135deg, #2b5278, #5288c1);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; font-weight: 600; color: #fff;
+            flex-shrink: 0;
+        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-name { font-weight: 500; color: #f5f5f5; }
+        .user-id { font-size: 0.78rem; color: #708499; }
+
+        /* Badges */
+        .tg-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 8px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .tg-badge-dollar { background: #1a3d2a; color: #4dbe68; }
+        .tg-badge-diamond { background: #162a3d; color: #71bafa; }
+        .tg-badge-win { background: #3d2a0f; color: #f5a623; }
+        .tg-badge-vip { background: #3d2a0f; color: #ffd700; }
+        .tg-badge-blocked { background: #3d1212; color: #f44336; }
+
+        /* Rank */
+        .rank-badge {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: #2b3a4a; color: #708499;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 700;
+        }
+
+        /* Search */
+        .tg-search {
+            background: #1c2631;
+            border: 1px solid #2b3a4a;
+            border-radius: 10px;
+            color: #f5f5f5;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            width: 100%;
+            outline: none;
+            transition: border-color .2s;
+        }
+        .tg-search:focus { border-color: #5288c1; }
+        .tg-search::placeholder { color: #708499; }
+
+        /* Buttons */
+        .tg-btn {
+            background: #2b5278;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background .2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .tg-btn:hover { background: #3a6a9a; color: #fff; }
+        .tg-btn-sm { padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; }
+        .tg-btn-ghost { background: transparent; border: 1px solid #2b3a4a; color: #adb5bd; }
+        .tg-btn-ghost:hover { background: #2b3a4a; color: #f5f5f5; }
+
+        /* Filter tabs */
+        .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filter-tab {
+            padding: 6px 14px; border-radius: 20px;
+            font-size: 0.83rem; font-weight: 500;
+            cursor: pointer; text-decoration: none;
+            border: 1px solid #2b3a4a; color: #708499;
+            transition: all .15s;
+        }
+        .filter-tab:hover { border-color: #5288c1; color: #5288c1; }
+        .filter-tab.active { background: #2b5278; border-color: #2b5278; color: #fff; }
+
+        /* Pagination */
+        .tg-pagination { display: flex; gap: 4px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .tg-page-btn {
+            min-width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.875rem; text-decoration: none;
+            background: #232e3c; border: 1px solid #1c2733; color: #708499;
+            transition: all .15s;
+        }
+        .tg-page-btn:hover { background: #2b3a4a; color: #f5f5f5; }
+        .tg-page-btn.active { background: #2b5278; border-color: #2b5278; color: #fff; }
+
+        /* Links */
+        a { color: #71bafa; text-decoration: none; }
+        a:hover { color: #a8d4ff; }
+
+        code { background: #1c2631; color: #71bafa; padding: 2px 6px; border-radius: 4px; font-size: 0.82rem; }
+
+        .divider { border-color: #1c2733; margin: 6px 0; }
+
+        /* ON/OFF toggle badges */
+        .tg-on { background: #1a3d2a; color: #4dbe68; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .tg-off { background: #2b2b2b; color: #708499; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .top-navbar {
+                display: flex;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 16px 12px;
+            }
+            .stat-card .value { font-size: 1.4rem; }
+            .page-header h1 { font-size: 1.15rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile top navbar -->
+<div class="top-navbar">
+    <button class="hamburger-btn" id="sidebarToggle" aria-label="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <span class="brand-name"><i class="bi bi-joystick me-1" style="color:#5288c1"></i>MafiaDash</span>
+</div>
+
+<!-- Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo"><i class="bi bi-joystick"></i></div>
+        <div>
+            <div class="name">MafiaDash</div>
+            <div class="sub">Bot boshqaruv paneli</div>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Asosiy</div>
+        <div class="nav-item">
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="{% url 'users' %}" class="nav-link {% if request.resolver_match.url_name == 'users' or request.resolver_match.url_name == 'user_detail' %}active{% endif %}">
+                <i class="bi bi-people"></i> Foydalanuvchilar
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="{% url 'top' %}" class="nav-link {% if request.resolver_match.url_name == 'top' %}active{% endif %}">
+                <i class="bi bi-trophy"></i> Top O'yinchilar
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Moliya</div>
+        <div class="nav-item">
+            <a href="{% url 'transfers' %}" class="nav-link {% if request.resolver_match.url_name == 'transfers' %}active{% endif %}">
+                <i class="bi bi-arrow-left-right"></i> Transferlar
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="{% url 'vip' %}" class="nav-link {% if request.resolver_match.url_name == 'vip' %}active{% endif %}">
+                <i class="bi bi-star"></i> VIP
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="{% url 'blocked' %}" class="nav-link {% if request.resolver_match.url_name == 'blocked' or request.resolver_match.url_name == 'block_user' %}active{% endif %}">
+                <i class="bi bi-slash-circle"></i> Bloklangan
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Boshqa</div>
+        <div class="nav-item">
+            <a href="{% url 'chats' %}" class="nav-link {% if request.resolver_match.url_name == 'chats' %}active{% endif %}">
+                <i class="bi bi-chat-dots"></i> Chatlar
+            </a>
+        </div>
+        <div class="nav-item">
+            <a href="{% url 'giveaways' %}" class="nav-link {% if request.resolver_match.url_name == 'giveaways' %}active{% endif %}">
+                <i class="bi bi-gift"></i> Giveawaylar
+            </a>
+        </div>
+    </div>
+
+    <div style="margin-top:auto;padding:12px 8px 16px">
+        <div style="padding:10px 12px;border-radius:10px;background:#1c2631;margin-bottom:8px;font-size:0.82rem;color:#708499;display:flex;align-items:center;gap:8px">
+            <i class="bi bi-person-circle" style="font-size:1.1rem;color:#5288c1"></i>
+            <span>{{ request.user.username }}</span>
+        </div>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" style="width:100%;background:#1c2631;border:1px solid #2b3a4a;color:#f44336;border-radius:10px;padding:9px 12px;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s" onmouseover="this.style.background='#2b1212'" onmouseout="this.style.background='#1c2631'">
+                <i class="bi bi-box-arrow-left"></i> Chiqish
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="main-content">
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('sidebarToggle');
+
+    function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+    }
+    function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    }
+
+    toggle.addEventListener('click', () => {
+        sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    // Close sidebar when a nav link is clicked on mobile
+    sidebar.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) closeSidebar();
+        });
+    });
+</script>
+</body>
+</html>
