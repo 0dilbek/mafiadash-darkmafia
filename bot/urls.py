@@ -27,4 +27,10 @@ urlpatterns = [
 
     path('auth/login/', views.magic_login, name='magic_login'),
     path('auth/error/', views.magic_login_error, name='magic_login_error'),
+
+    path('group/<uuid:token>/', views.panel_entry, name='panel_entry'),
+    path('group/', views.group_dashboard, name='group_dashboard'),
+    path('api/group-chart/', views.group_chart_data, name='group_chart_data'),
+
+    path('api/generate-link/', views.generate_panel_link, name='generate_panel_link'),
 ]

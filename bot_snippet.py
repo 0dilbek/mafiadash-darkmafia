@@ -1,42 +1,23 @@
 """
-Bot tomoni (Tortoise ORM) uchun Magic Link snippet.
+Bot tomoni uchun MafiaDash panel link snippet.
 Bu kodni o'zingizning aiogram botingizga qo'shing.
 
-Zarur o'rnatmalar (.env yoki config):
-    ADMIN_IDS = [123456789, 987654321]   # ruxsat berilgan admin Telegram IDlari
-    DASHBOARD_URL = https://domain.uz    # veb-panel manzili
-"""
-import uuid
-import os
-from datetime import datetime, timezone, timedelta
+Zarur .env o'zgaruvchilari:
+    PANEL_API_URL=https://yourdomain.com/api/generate-link/
+    BOT_API_SECRET=your_shared_secret_here   # Django dagi BOT_API_SECRET bilan bir xil
+    ADMIN_TELEGRAM_IDS=123456789,987654321
 
+Ishlash tartibi:
+    Bot → POST /api/generate-link/ → Django token yaratadi → URL qaytaradi → Bot tugma ko'rsatadi
+"""
+import os
+import logging
+
+import aiohttp
 from aiogram import Router, types
 from aiogram.filters import Command
-from tortoise import fields
-from tortoise.models import Model
 
-# ── Tortoise modeli (Django ning admin_login_tokens jadvalidek bir xil) ────────
-
-class AdminLoginToken(Model):
-    id = fields.BigIntField(pk=True)
-    user_id = fields.BigIntField()
-    token = fields.UUIDField(default=uuid.uuid4)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    expires_at = fields.DatetimeField()
-
-    class Meta:
-        table = "admin_login_tokens"
-
-    @classmethod
-    async def create_for_user(cls, telegram_user_id: int, days: int = 1):
-        # Avvalgi eskirgan tokenlarni tozalaymiz
-        now = datetime.now(timezone.utc)
-        await cls.filter(user_id=telegram_user_id, expires_at__lt=now).delete()
-
-        return await cls.create(
-            user_id=telegram_user_id,
-            expires_at=now + timedelta(days=days),
-        )
+logger = logging.getLogger(__name__)
 
 
 # ── Config ─────────────────────────────────────────────────────────────────────
@@ -46,7 +27,34 @@ ADMIN_IDS: list[int] = [
     for x in os.environ.get("ADMIN_TELEGRAM_IDS", "").split(",")
     if x.strip().isdigit()
 ]
-DASHBOARD_URL: str = os.environ.get("DASHBOARD_URL", "https://domain.uz")
+PANEL_API_URL: str = os.environ.get("PANEL_API_URL", "")
+BOT_API_SECRET: str = os.environ.get("BOT_API_SECRET", "")
+
+
+# ── Panel URL olish ─────────────────────────────────────────────────────────────
+
+async def fetch_panel_url(chat_id: int) -> str | None:
+    """
+    Django dan magic-link URL so'raydi (GET).
+    Xato bo'lsa yoki sozlanmagan bo'lsa — None qaytaradi.
+    """
+    if not PANEL_API_URL:
+        return None
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                PANEL_API_URL,
+                params={"chat_id": chat_id},
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    return data.get("url")
+    except Exception as e:
+        logger.warning("fetch_panel_url xatosi: %s", e)
+
+    return None
 
 
 # ── Handler ────────────────────────────────────────────────────────────────────
@@ -62,12 +70,26 @@ async def dashboard_command(message: types.Message):
         await message.answer("❌ Siz admin emassiz.")
         return
 
-    token_obj = await AdminLoginToken.create_for_user(user_id)
-    link = f"{DASHBOARD_URL}/auth/login/?token={token_obj.token}"
+    is_group = message.chat.type in ("group", "supergroup")
+    chat_id = message.chat.id if is_group else None
 
+    if not PANEL_API_URL:
+        await message.answer("⚙️ Panel hali sozlanmagan.")
+        return
+
+    if not is_group:
+        await message.answer("ℹ️ Bu buyruqni guruh ichida yuboring.")
+        return
+
+    url = await fetch_panel_url(chat_id=chat_id, user_id=user_id)
+    if not url:
+        await message.answer("❌ Panel bilan bog'lanishda xato. Keyinroq urinib ko'ring.")
+        return
+
+    group_name = message.chat.title or "guruh"
     text = (
-        "🔐 <b>MafiaDash kirish havolasi</b>\n\n"
-        f'<a href="{link}">👉 Dashboard ga kirish</a>\n\n'
+        f"🔐 <b>MafiaDash — {group_name}</b>\n\n"
+        f'<a href="{url}">👉 Guruh panelini ochish</a>\n\n'
         "⚠️ <i>Havola 24 soat amal qiladi va faqat bir marta ishlatiladi.</i>\n"
         "🔒 Havolani hech kim bilan ulashmang!"
     )

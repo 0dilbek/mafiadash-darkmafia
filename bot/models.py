@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 class AdminLoginToken(models.Model):
     """Magic-link token: botdan yaratiladi, Django sessiyasini ochadi."""
     user_id = models.BigIntegerField(db_index=True)       # Telegram admin ID
+    chat_id = models.BigIntegerField(null=True, blank=True)  # Qaysi guruh uchun
     token = models.UUIDField(default=_uuid.uuid4, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
@@ -18,11 +19,12 @@ class AdminLoginToken(models.Model):
         return tz.now() < self.expires_at
 
     @classmethod
-    def create_for_user(cls, telegram_user_id: int, days: int = 1):
+    def create_for_user(cls, telegram_user_id: int, chat_id: int = None, days: int = 1):
         """Yangi token yaratadi; avvalgi eskirgan tokenlarni tozalaydi."""
         cls.objects.filter(user_id=telegram_user_id, expires_at__lt=tz.now()).delete()
         return cls.objects.create(
             user_id=telegram_user_id,
+            chat_id=chat_id,
             expires_at=tz.now() + timedelta(days=days),
         )
 

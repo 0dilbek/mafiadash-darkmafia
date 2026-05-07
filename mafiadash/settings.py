@@ -89,3 +89,6 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'http://localhost:8000')
+
+# Bot → Django API autentifikatsiyasi (ikkalasida bir xil bo'lishi kerak)
+BOT_API_SECRET = os.environ.get('BOT_API_SECRET', '')

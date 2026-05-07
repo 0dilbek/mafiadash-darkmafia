@@ -95,6 +95,17 @@
             Botdan yangi havola oling: <code>/dashboard</code>
         </div>
 
+    {% elif reason == 'no_chat' %}
+        <div class="icon-wrap" style="background:#1a2a1a">
+            <i class="bi bi-people-fill" style="color:#4caf50"></i>
+        </div>
+        <h1 style="color:#4caf50">Guruh topilmadi</h1>
+        <p>Sizning guruhingiz hali botda ro'yxatdan o'tmagan yoki ma'lumotlar bazasida mavjud emas.</p>
+        <p>Botni guruhga qo'shing va bir marta o'yin boshlang, so'ng qayta urinib ko'ring.</p>
+        <div class="hint">
+            Guruh ichida <code>/dashboard</code> buyrug'ini yuboring.
+        </div>
+
     {% else %}
         <div class="icon-wrap" style="background:#3d1212">
             <i class="bi bi-shield-x" style="color:#f44336"></i>

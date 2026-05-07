@@ -5,8 +5,9 @@ from django.db.models.functions import TruncHour, TruncDay, TruncMonth
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
+from django.conf import settings
 from datetime import timedelta
 from urllib.parse import urlencode
 from .models import (
@@ -422,16 +423,169 @@ def magic_login(request):
         return render(request, 'bot/magic_error.html', {'reason': 'expired'})
 
     telegram_user_id = auth_token.user_id
+    tg_chat_id = auth_token.chat_id  # delete() dan oldin saqlaymiz
     auth_token.delete()  # Bir martalik — darhol o'chiramiz
 
     # Faqat session — Django auth bilan aloqa yo'q
     request.session['tg_user_id'] = telegram_user_id
+    request.session['tg_chat_id'] = tg_chat_id
     request.session['tg_authenticated'] = True
     request.session.set_expiry(86400)  # 24 soat
 
-    return redirect('dashboard')
+    return redirect('group_dashboard')
 
 
 def magic_login_error(request):
     """Session yo'q yoki muddati o'tgan foydalanuvchilar uchun."""
     return render(request, 'bot/magic_error.html', {'reason': 'session_expired'})
+
+
+def generate_panel_link(request):
+    """
+    Bot → Django: magic-link URL yaratib qaytaradi.
+
+    GET /api/generate-link/?chat_id=-1001234567890
+
+    Response: {"url": "https://domain/group/<uuid>/", "expires_at": "2026-..."}
+    """
+    chat_id_raw = request.GET.get('chat_id', '').strip()
+    if not chat_id_raw:
+        return JsonResponse({'error': 'chat_id required'}, status=400)
+    try:
+        chat_id = int(chat_id_raw)
+    except ValueError:
+        return JsonResponse({'error': 'invalid chat_id'}, status=400)
+
+    # Bir vaqtda faqat bitta aktiv token — eskisini o'chiramiz
+    AdminLoginToken.objects.filter(chat_id=chat_id).delete()
+
+    expires_at = timezone.now() + timedelta(minutes=30)
+    token_obj = AdminLoginToken.objects.create(
+        user_id=0,       # bot generate qilganda user_id shart emas
+        chat_id=chat_id,
+        expires_at=expires_at,
+    )
+    url = f"{settings.DASHBOARD_URL}/group/{token_obj.token}/"
+    return JsonResponse({'url': url, 'expires_at': expires_at.isoformat()})
+
+
+# ── Guruh egasi / admin uchun sahifa ──────────────────────────────────────────
+
+def panel_entry(request, token):
+    """
+    GET /group/<uuid:token>/
+    Token orqali sessiya ochadi va guruh paneliga yo'naltiradi.
+    """
+    try:
+        obj = AdminLoginToken.objects.get(token=token)
+    except AdminLoginToken.DoesNotExist:
+        return render(request, 'bot/magic_error.html', {'reason': 'invalid'})
+
+    if timezone.now() > obj.expires_at:
+        obj.delete()
+        return render(request, 'bot/magic_error.html', {'reason': 'expired'})
+
+    tg_chat_id = obj.chat_id
+    obj.delete()  # Bir martalik
+
+    if not tg_chat_id:
+        return render(request, 'bot/magic_error.html', {'reason': 'no_chat'})
+
+    request.session['tg_chat_id'] = tg_chat_id
+    request.session['tg_authenticated'] = True
+    request.session.set_expiry(86400)
+    return redirect('group_dashboard')
+
+
+def _tg_auth_required(request):
+    """Session tekshiradi, False bo'lsa error response qaytaradi."""
+    return request.session.get('tg_authenticated') and request.session.get('tg_chat_id')
+
+
+def group_dashboard(request):
+    if not _tg_auth_required(request):
+        return redirect('magic_login_error')
+
+    tg_chat_id = request.session['tg_chat_id']
+    chat = Chat.objects.filter(chat_id=tg_chat_id).first()
+    if not chat:
+        return render(request, 'bot/magic_error.html', {'reason': 'no_chat'})
+
+    total_games = Game.objects.filter(chat=chat).count()
+    active_game = (
+        Game.objects.filter(chat=chat, is_active=True)
+        .annotate(
+            total_pl=Count('players', distinct=True),
+            alive_pl=Count('players', filter=Q(players__is_alive=True), distinct=True),
+        )
+        .order_by('-created_at')
+        .first()
+    )
+    balance_obj = GroupBalance.objects.filter(chat_id=tg_chat_id).first()
+    balance = balance_obj.balance if balance_obj else 0
+
+    return render(request, 'bot/group_dashboard.html', {
+        'chat': chat,
+        'total_games': total_games,
+        'active_game': active_game,
+        'balance': balance,
+    })
+
+
+def group_chart_data(request):
+    if not _tg_auth_required(request):
+        return HttpResponseForbidden()
+
+    tg_chat_id = request.session['tg_chat_id']
+    chat = Chat.objects.filter(chat_id=tg_chat_id).first()
+    if not chat:
+        return JsonResponse({'labels': [], 'games': [], 'players': []})
+
+    period = request.GET.get('period', 'week')
+    now = timezone.now()
+    cfg = {
+        '12h':   (now - timedelta(hours=12), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
+        '24h':   (now - timedelta(hours=24), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
+        'today': (now.replace(hour=0, minute=0, second=0, microsecond=0), TruncHour, 'hour', '%H:00', timedelta(hours=1)),
+        'week':  (now - timedelta(days=7),   TruncDay,   'day',   '%d.%m', timedelta(days=1)),
+        'month': (now - timedelta(days=30),  TruncDay,   'day',   '%d.%m', timedelta(days=1)),
+        'year':  (now - timedelta(days=365), TruncMonth, 'month', '%m.%Y', None),
+    }
+    start, trunc_fn, trunc_type, fmt, delta = cfg.get(period, cfg['week'])
+
+    buckets = []
+    if trunc_type == 'month':
+        cur = start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        while cur <= now:
+            buckets.append(cur)
+            cur = cur.replace(year=cur.year + (1 if cur.month == 12 else 0),
+                              month=cur.month % 12 + 1)
+    elif trunc_type == 'hour':
+        cur = start.replace(minute=0, second=0, microsecond=0)
+        while cur <= now:
+            buckets.append(cur)
+            cur += delta
+    else:
+        cur = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        while cur <= now:
+            buckets.append(cur)
+            cur += delta
+
+    games_d = {
+        row['bucket']: row['count']
+        for row in Game.objects.filter(chat=chat, created_at__gte=start)
+        .annotate(bucket=trunc_fn('created_at'))
+        .values('bucket').annotate(count=Count('id')).order_by('bucket')
+    }
+    players_d = {
+        row['bucket']: row['count']
+        for row in GamePlayer.objects.filter(game__chat=chat, joined_at__gte=start)
+        .annotate(bucket=trunc_fn('joined_at'))
+        .values('bucket').annotate(count=Count('id')).order_by('bucket')
+    }
+
+    return JsonResponse({
+        'labels':  [b.strftime(fmt) for b in buckets],
+        'games':   [games_d.get(b, 0) for b in buckets],
+        'players': [players_d.get(b, 0) for b in buckets],
+    })
