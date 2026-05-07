@@ -459,7 +459,7 @@ def generate_panel_link(request):
     # Bir vaqtda faqat bitta aktiv token — eskisini o'chiramiz
     AdminLoginToken.objects.filter(chat_id=chat_id).delete()
 
-    expires_at = timezone.now() + timedelta(minutes=30)
+    expires_at = timezone.now() + timedelta(days=1)
     token_obj = AdminLoginToken.objects.create(
         user_id=0,       # bot generate qilganda user_id shart emas
         chat_id=chat_id,
@@ -486,7 +486,6 @@ def panel_entry(request, token):
         return render(request, 'bot/magic_error.html', {'reason': 'expired'})
 
     tg_chat_id = obj.chat_id
-    obj.delete()  # Bir martalik
 
     if not tg_chat_id:
         return render(request, 'bot/magic_error.html', {'reason': 'no_chat'})
