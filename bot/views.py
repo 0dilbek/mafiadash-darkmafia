@@ -35,7 +35,7 @@ def dashboard(request):
     def gte(qs, field='created_at'):
         return qs.filter(**{f'{field}__gte': start_dt}) if start_dt else qs
 
-    total_users = User.objects.count()
+    total_users = User.objects.filter(profile__isnull=False).count()
     total_vip = VipUser.objects.count()
     total_chats = Chat.objects.count()
     active_games_count = Game.objects.filter(is_active=True).count()
@@ -176,7 +176,7 @@ def users_list(request):
         'wins': 'profile__wins', '-wins': '-profile__wins',
         'id': 'id', '-id': '-id',
     }
-    users = User.objects.prefetch_related('profile').order_by(sort_map.get(sort, '-id'))
+    users = User.objects.filter(profile__isnull=False).prefetch_related('profile').order_by(sort_map.get(sort, '-id'))
 
     if query:
         users = users.filter(
