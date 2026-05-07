@@ -87,3 +87,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# Magic Link
+# .env da: ADMIN_TELEGRAM_IDS=123456789,987654321
+ADMIN_TELEGRAM_IDS = [
+    int(x.strip()) for x in os.environ.get('ADMIN_TELEGRAM_IDS', '').split(',')
+    if x.strip().isdigit()
+]
+DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'http://localhost:8000')

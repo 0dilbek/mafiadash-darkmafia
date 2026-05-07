@@ -343,6 +343,15 @@
     </div>
 
     <div class="nav-section">
+        <div class="nav-section-title">O'yinlar</div>
+        <div class="nav-item">
+            <a href="{% url 'active_games' %}" class="nav-link {% if request.resolver_match.url_name == 'active_games' or request.resolver_match.url_name == 'game_detail' %}active{% endif %}">
+                <i class="bi bi-controller"></i> Faol O'yinlar
+            </a>
+        </div>
+    </div>
+
+    <div class="nav-section">
         <div class="nav-section-title">Boshqa</div>
         <div class="nav-item">
             <a href="{% url 'chats' %}" class="nav-link {% if request.resolver_match.url_name == 'chats' %}active{% endif %}">
@@ -371,6 +380,20 @@
 </div>
 
 <div class="main-content">
+    {% if messages %}
+    <div class="mb-3">
+        {% for msg in messages %}
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:6px;font-size:0.88rem;
+            {% if msg.tags == 'success' %}background:#1a3d2a;border:1px solid #2d6b3a;color:#4dbe68;
+            {% elif msg.tags == 'warning' %}background:#3d2a0f;border:1px solid #6b4a1a;color:#f5a623;
+            {% elif msg.tags == 'error' or msg.tags == 'danger' %}background:#3d1212;border:1px solid #6b2020;color:#f44336;
+            {% else %}background:#162a3d;border:1px solid #2a4a6b;color:#71bafa;{% endif %}">
+            <i class="bi {% if msg.tags == 'success' %}bi-check-circle{% elif msg.tags == 'warning' %}bi-exclamation-triangle{% elif msg.tags == 'error' or msg.tags == 'danger' %}bi-x-circle{% else %}bi-info-circle{% endif %}"></i>
+            {{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     {% block content %}{% endblock %}
 </div>
 

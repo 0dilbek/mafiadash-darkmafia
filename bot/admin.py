@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, BlockedUser, Profile, ActiveRole, Transfer, VipUser, Para, Chat
+from .models import User, BlockedUser, Profile, ActiveRole, Transfer, VipUser, Para, Chat, AdminLoginToken
 
 
 @admin.register(User)
@@ -51,3 +51,15 @@ class ChatAdmin(admin.ModelAdmin):
     list_display = ('id', 'chat_id', 'title', 'type', 'created_at')
     search_fields = ('title', 'chat_id')
     list_filter = ('type',)
+
+
+@admin.register(AdminLoginToken)
+class AdminLoginTokenAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user_id', 'token', 'created_at', 'expires_at', 'is_valid')
+    search_fields = ('user_id',)
+    readonly_fields = ('token', 'created_at')
+
+    def is_valid(self, obj):
+        return obj.is_valid()
+    is_valid.boolean = True
+    is_valid.short_description = 'Amal qiladi'

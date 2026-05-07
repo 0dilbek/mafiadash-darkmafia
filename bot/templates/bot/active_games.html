@@ -1,0 +1,111 @@
+{% extends 'bot/base.html' %}
+{% block title %}Faol O'yinlar - MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <h1><i class="bi bi-controller me-2" style="color:#4dbe68"></i>Faol O'yinlar</h1>
+        <p>Hozirda davom etayotgan o'yinlar — jami <strong style="color:#f5f5f5">{{ games|length }}</strong> ta</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+        {% if games %}
+        <span style="width:10px;height:10px;background:#4dbe68;border-radius:50%;display:inline-block;animation:pulse 1.5s infinite"></span>
+        <span style="color:#4dbe68;font-size:0.85rem;font-weight:600">Jonli</span>
+        {% endif %}
+    </div>
+</div>
+
+{% if not games %}
+<div class="tg-card" style="padding:60px 20px;text-align:center">
+    <i class="bi bi-controller" style="font-size:3rem;color:#2b3a4a"></i>
+    <div style="color:#708499;margin-top:16px;font-size:1rem">Hozirda faol o'yin yo'q</div>
+    <div style="color:#4a5568;font-size:0.85rem;margin-top:6px">O'yinlar boshlanganida bu yerda ko'rinadi</div>
+</div>
+{% else %}
+<div class="tg-card">
+    <div class="tg-table-wrap"><table class="tg-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Guruh</th>
+                <th>O'yinchilar</th>
+                <th>Holat</th>
+                <th>Rejim</th>
+                <th>Boshlangan</th>
+                <th>Havola</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in games %}
+            <tr style="cursor:pointer" onclick="window.location='{% url 'game_detail' g.pk %}'">
+                <td style="color:#708499;font-size:0.82rem">{{ forloop.counter }}</td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:10px">
+                        <div class="user-avatar" style="background:linear-gradient(135deg,#1a3d6b,#5288c1);border-radius:10px;flex-shrink:0">
+                            <i class="bi bi-people" style="font-size:1rem"></i>
+                        </div>
+                        <div>
+                            <div style="font-weight:600;color:#f5f5f5">{{ g.chat.title|truncatechars:30 }}</div>
+                            <div style="font-size:0.75rem;color:#708499"><code style="font-size:0.72rem">{{ g.chat.chat_id }}</code></div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <div style="background:#1c2631;border-radius:6px;padding:4px 10px;font-size:0.85rem">
+                            <span style="color:#4dbe68;font-weight:700">{{ g.alive_players }}</span>
+                            <span style="color:#708499"> / {{ g.total_players }}</span>
+                        </div>
+                    </div>
+                    <!-- Progress bar -->
+                    <div style="background:#1c2631;border-radius:4px;height:4px;margin-top:6px;width:80px;overflow:hidden">
+                        {% if g.total_players > 0 %}
+                        <div style="background:#4dbe68;height:100%;border-radius:4px;width:{% widthratio g.alive_players g.total_players 100 %}%"></div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    {% if g.phase == 'waiting' %}
+                        <span style="background:#3d2a0f;color:#f5a623;padding:4px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;white-space:nowrap">⏳ Kutilmoqda</span>
+                    {% elif g.phase == 'night' %}
+                        <span style="background:#162a3d;color:#71bafa;padding:4px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;white-space:nowrap">🌙 Tun</span>
+                    {% elif g.phase == 'day' %}
+                        <span style="background:#3d300f;color:#ffcc44;padding:4px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;white-space:nowrap">☀️ Kun</span>
+                    {% else %}
+                        <span style="background:#1a3d2a;color:#4dbe68;padding:4px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;white-space:nowrap">✅ Tugadi</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span style="background:#1c2631;color:#adb5bd;padding:3px 8px;border-radius:6px;font-size:0.8rem">{{ g.mode }}</span>
+                </td>
+                <td style="color:#708499;font-size:0.82rem;white-space:nowrap">{{ g.created_at|date:"d.m.Y H:i" }}</td>
+                <td>
+                    {% if g.chat.invite_link %}
+                    <a href="{{ g.chat.invite_link }}" target="_blank" onclick="event.stopPropagation()"
+                       style="color:#71bafa;font-size:0.82rem">
+                        <i class="bi bi-telegram"></i> Guruh
+                    </a>
+                    {% else %}
+                    <span style="color:#708499;font-size:0.82rem">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'game_detail' g.pk %}" class="tg-btn tg-btn-sm tg-btn-ghost" onclick="event.stopPropagation()">
+                        <i class="bi bi-eye me-1"></i>Batafsil
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endif %}
+
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .4; transform: scale(1.5); }
+}
+</style>
+{% endblock %}

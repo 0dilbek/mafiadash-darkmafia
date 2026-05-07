@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish xatosi - MafiaDash</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #17212b;
+            color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #232e3c;
+            border: 1px solid #1c2733;
+            border-radius: 20px;
+            padding: 48px 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+        }
+        .icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 24px;
+        }
+        h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; }
+        p  { font-size: 0.9rem; color: #708499; line-height: 1.6; margin-bottom: 8px; }
+        .hint {
+            background: #1c2631;
+            border-radius: 10px;
+            padding: 14px 16px;
+            font-size: 0.85rem;
+            color: #708499;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .hint code {
+            background: #17212b;
+            color: #71bafa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+        }
+        .brand {
+            font-size: 0.82rem;
+            color: #4a5568;
+            margin-top: 28px;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    {% if reason == 'session_expired' %}
+        <div class="icon-wrap" style="background:#162a3d">
+            <i class="bi bi-clock-history" style="color:#71bafa"></i>
+        </div>
+        <h1 style="color:#71bafa">Sessiya tugadi</h1>
+        <p>Sizning sessiyangiz muddati o'tdi yoki siz hali kirmagan bo'lishingiz mumkin.</p>
+        <p>Botdan yangi kirish havolasi oling:</p>
+        <div class="hint">
+            Telegram botda <code>/dashboard</code> buyrug'ini yuboring.
+        </div>
+
+    {% elif reason == 'expired' %}
+        <div class="icon-wrap" style="background:#3d2a0f">
+            <i class="bi bi-hourglass-bottom" style="color:#f5a623"></i>
+        </div>
+        <h1 style="color:#f5a623">Havola muddati o'tdi</h1>
+        <p>Ushbu kirish havolasi eskirgan. Tokenlar <strong style="color:#f5f5f5">24 soat</strong> davomida amal qiladi.</p>
+        <p>Botdan yangi havola oling:</p>
+        <div class="hint">
+            Telegram botda <code>/dashboard</code> buyrug'ini yuboring — yangi havola yuboriladi.
+        </div>
+
+    {% elif reason == 'no_token' %}
+        <div class="icon-wrap" style="background:#3d1212">
+            <i class="bi bi-link-45deg" style="color:#f44336"></i>
+        </div>
+        <h1 style="color:#f44336">Havola noto'g'ri</h1>
+        <p>Kirish havolasida token parametri yo'q yoki havola noto'g'ri shakllangan.</p>
+        <div class="hint">
+            Botdan yangi havola oling: <code>/dashboard</code>
+        </div>
+
+    {% else %}
+        <div class="icon-wrap" style="background:#3d1212">
+            <i class="bi bi-shield-x" style="color:#f44336"></i>
+        </div>
+        <h1 style="color:#f44336">Kirish rad etildi</h1>
+        <p>Token topilmadi yoki allaqachon ishlatilgan. Har bir havola faqat <strong style="color:#f5f5f5">bir marta</strong> ishlaydi.</p>
+        <div class="hint">
+            Botdan yangi havola oling: <code>/dashboard</code>
+        </div>
+    {% endif %}
+
+    <div class="brand">
+        <i class="bi bi-joystick" style="color:#2b5278"></i> MafiaDash
+    </div>
+</div>
+</body>
+</html>

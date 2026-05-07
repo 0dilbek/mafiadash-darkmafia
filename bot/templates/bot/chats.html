@@ -4,81 +4,200 @@
 {% block content %}
 <div class="page-header">
     <h1><i class="bi bi-chat-dots me-2" style="color:#5288c1"></i>Chatlar</h1>
-    <p>Jami {{ chats.paginator.count }} ta chat</p>
+    <p>Jami <strong style="color:#f5f5f5">{{ chats.paginator.count }}</strong> ta chat</p>
 </div>
 
-<div class="tg-card mb-4" style="padding:14px 16px">
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-        <form class="d-flex gap-2 flex-grow-1" method="get">
-            <input type="text" name="q" class="tg-search" placeholder="Nomi yoki Chat ID bo'yicha qidirish..." value="{{ query }}">
-            {% if type_filter %}<input type="hidden" name="type" value="{{ type_filter }}">{% endif %}
-            <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
-            {% if query or type_filter %}<a href="{% url 'chats' %}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
-        </form>
-        <div class="filter-tabs">
-            <a href="{% url 'chats' %}{% if query %}?q={{ query }}{% endif %}" class="filter-tab {% if not type_filter %}active{% endif %}">Barchasi</a>
-            <a href="?type=group{% if query %}&q={{ query }}{% endif %}" class="filter-tab {% if type_filter == 'group' %}active{% endif %}">Guruh</a>
-            <a href="?type=supergroup{% if query %}&q={{ query }}{% endif %}" class="filter-tab {% if type_filter == 'supergroup' %}active{% endif %}">Supergroup</a>
+<!-- ── Qidiruv ────────────────────────────────────────── -->
+<div class="tg-card mb-3" style="padding:14px 16px">
+    <form method="get" id="filterForm">
+        <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+            <div style="flex:1;min-width:200px">
+                <input type="text" name="q" class="tg-search" placeholder="Nomi yoki Chat ID bo'yicha..." value="{{ query }}">
+            </div>
+            <input type="hidden" name="type" value="{{ type_filter }}">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="hidden" name="date_filter" value="{{ date_filter }}">
+            {% if date_from %}<input type="hidden" name="date_from" value="{{ date_from }}">{% endif %}
+            {% if date_to %}<input type="hidden" name="date_to" value="{{ date_to }}">{% endif %}
+            <button type="submit" class="tg-btn"><i class="bi bi-search me-1"></i>Qidirish</button>
+            {% if query or type_filter or date_filter or date_from or date_to %}
+            <a href="{% url 'chats' %}" class="tg-btn tg-btn-ghost">Tozalash</a>
+            {% endif %}
         </div>
-    </div>
+
+        <!-- Tur filtri -->
+        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+            <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Tur:</span>
+            <div class="filter-tabs">
+                <a href="?q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}&date_from={{ date_from }}&date_to={{ date_to }}" class="filter-tab {% if not type_filter %}active{% endif %}">Barchasi</a>
+                <a href="?q={{ query }}&type=group&sort={{ sort }}&date_filter={{ date_filter }}&date_from={{ date_from }}&date_to={{ date_to }}" class="filter-tab {% if type_filter == 'group' %}active{% endif %}">Guruh</a>
+                <a href="?q={{ query }}&type=supergroup&sort={{ sort }}&date_filter={{ date_filter }}&date_from={{ date_from }}&date_to={{ date_to }}" class="filter-tab {% if type_filter == 'supergroup' %}active{% endif %}">Supergroup</a>
+            </div>
+        </div>
+
+        <!-- Sana filtri -->
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Qo'shilgan:</span>
+            <div class="filter-tabs">
+                <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}" class="filter-tab {% if not date_filter and not date_from and not date_to %}active{% endif %}">Barchasi</a>
+                <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=today" class="filter-tab {% if date_filter == 'today' %}active{% endif %}">Bugun</a>
+                <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=yesterday" class="filter-tab {% if date_filter == 'yesterday' %}active{% endif %}">Kecha</a>
+                <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=week" class="filter-tab {% if date_filter == 'week' %}active{% endif %}">Hafta</a>
+                <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=month" class="filter-tab {% if date_filter == 'month' %}active{% endif %}">Oy</a>
+                <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=year" class="filter-tab {% if date_filter == 'year' %}active{% endif %}">Yil</a>
+            </div>
+            <!-- Maxsus sana oralig'i -->
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <input type="date" name="date_from" value="{{ date_from }}"
+                    style="background:#1c2631;border:1px solid #2b3a4a;border-radius:8px;color:#f5f5f5;padding:6px 10px;font-size:0.82rem;outline:none"
+                    onchange="document.getElementById('filterForm').submit()">
+                <span style="color:#708499;font-size:0.82rem">—</span>
+                <input type="date" name="date_to" value="{{ date_to }}"
+                    style="background:#1c2631;border:1px solid #2b3a4a;border-radius:8px;color:#f5f5f5;padding:6px 10px;font-size:0.82rem;outline:none"
+                    onchange="document.getElementById('filterForm').submit()">
+            </div>
+        </div>
+    </form>
 </div>
 
+<!-- ── Jadval ─────────────────────────────────────────── -->
 <div class="tg-card">
     <div class="tg-table-wrap"><table class="tg-table">
         <thead>
-            <tr><th>Chat</th><th>Chat ID</th><th>Tur</th><th>Invite link</th><th>Qo'shilgan</th></tr>
+            <tr>
+                <th>Chat</th>
+                <th>
+                    <a href="?q={{ query }}&type={{ type_filter }}&date_filter={{ date_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={% if sort == 'games' %}-games{% else %}games{% endif %}"
+                       style="color:{% if sort == 'games' or sort == '-games' %}#5288c1{% else %}#708499{% endif %};text-decoration:none;white-space:nowrap">
+                        O'yinlar
+                        {% if sort == 'games' %}<i class="bi bi-arrow-down"></i>{% elif sort == '-games' %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?q={{ query }}&type={{ type_filter }}&date_filter={{ date_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={% if sort == 'balance' %}-balance{% else %}balance{% endif %}"
+                       style="color:{% if sort == 'balance' or sort == '-balance' %}#5288c1{% else %}#708499{% endif %};text-decoration:none;white-space:nowrap">
+                        Balans
+                        {% if sort == 'balance' %}<i class="bi bi-arrow-down"></i>{% elif sort == '-balance' %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>Tur</th>
+                <th>Havola</th>
+                <th>Holat</th>
+                <th>
+                    <a href="?q={{ query }}&type={{ type_filter }}&date_filter={{ date_filter }}&date_from={{ date_from }}&date_to={{ date_to }}&sort={% if sort == '-date' %}date{% else %}-date{% endif %}"
+                       style="color:{% if sort == 'date' or sort == '-date' %}#5288c1{% else %}#708499{% endif %};text-decoration:none;white-space:nowrap">
+                        Qo'shilgan
+                        {% if sort == '-date' %}<i class="bi bi-arrow-down"></i>{% elif sort == 'date' %}<i class="bi bi-arrow-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>Amallar</th>
+            </tr>
         </thead>
         <tbody>
             {% for chat in chats %}
             <tr>
                 <td>
                     <div style="display:flex;align-items:center;gap:10px">
-                        <div class="user-avatar" style="background:linear-gradient(135deg,#1a3d6b,#5288c1);border-radius:10px">
+                        <div class="user-avatar" style="background:linear-gradient(135deg,#1a3d6b,#5288c1);border-radius:10px;flex-shrink:0">
                             <i class="bi bi-people" style="font-size:1rem"></i>
                         </div>
-                        <span style="font-weight:600;color:#f5f5f5">{{ chat.title }}</span>
+                        <div>
+                            <div style="font-weight:600;color:#f5f5f5;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ chat.title }}</div>
+                            <div style="font-size:0.75rem;color:#708499"><code style="font-size:0.72rem">{{ chat.chat_id }}</code></div>
+                        </div>
                     </div>
                 </td>
-                <td><code>{{ chat.chat_id }}</code></td>
+                <td>
+                    <span style="background:#1a3049;color:#5288c1;padding:3px 10px;border-radius:20px;font-size:0.82rem;font-weight:600">
+                        {{ chat.games_count }}
+                    </span>
+                </td>
+                <td>
+                    {% if chat.balance %}
+                        <span style="background:#1a3d2a;color:#4dbe68;padding:3px 10px;border-radius:20px;font-size:0.82rem;font-weight:600">
+                            💰 {{ chat.balance }}
+                        </span>
+                    {% else %}
+                        <span style="color:#708499;font-size:0.82rem">—</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if chat.type == 'supergroup' %}
-                    <span style="background:#162a3d;color:#71bafa;padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600">Supergroup</span>
+                        <span style="background:#162a3d;color:#71bafa;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600">Supergroup</span>
                     {% else %}
-                    <span style="background:#1a2d1a;color:#4dbe68;padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600">Guruh</span>
+                        <span style="background:#1a2d1a;color:#4dbe68;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:600">Guruh</span>
                     {% endif %}
                 </td>
                 <td>
                     {% if chat.invite_link %}
-                    <a href="{{ chat.invite_link }}" target="_blank" style="font-size:0.82rem">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Havola
+                    <a href="{{ chat.invite_link }}" target="_blank" style="font-size:0.82rem;white-space:nowrap">
+                        <i class="bi bi-telegram me-1"></i>Ochish
                     </a>
                     {% else %}
                     <span style="color:#708499;font-size:0.82rem">—</span>
                     {% endif %}
                 </td>
-                <td style="color:#708499;font-size:0.82rem">{{ chat.created_at|date:"d.m.Y H:i" }}</td>
+                <td>
+                    {% if chat.is_blocked %}
+                        <span style="background:#3d1212;color:#f44336;padding:3px 8px;border-radius:6px;font-size:0.78rem;font-weight:600">🔒 Bloklangan</span>
+                    {% else %}
+                        <span style="background:#1a3d2a;color:#4dbe68;padding:3px 8px;border-radius:6px;font-size:0.78rem;font-weight:600">✅ Faol</span>
+                    {% endif %}
+                </td>
+                <td style="color:#708499;font-size:0.82rem;white-space:nowrap">{{ chat.created_at|date:"d.m.Y" }}</td>
+                <td>
+                    <div style="display:flex;gap:5px;flex-wrap:nowrap">
+                        <!-- Bloklash / Ochish -->
+                        <form method="post" action="{% url 'chat_toggle_block' chat.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit"
+                                class="tg-btn tg-btn-sm"
+                                style="background:{% if chat.is_blocked %}#1a3d2a{% else %}#3d1212{% endif %};color:{% if chat.is_blocked %}#4dbe68{% else %}#f44336{% endif %};border:none;padding:5px 8px"
+                                title="{% if chat.is_blocked %}Blokdan chiqarish{% else %}Bloklash{% endif %}"
+                                onclick="return confirm('{% if chat.is_blocked %}Blokdan chiqarilsinmi?{% else %}Guruh bloklansiniami?{% endif %}')">
+                                <i class="bi {% if chat.is_blocked %}bi-unlock{% else %}bi-lock{% endif %}"></i>
+                            </button>
+                        </form>
+                        <!-- Balansni tozalash -->
+                        {% if chat.balance %}
+                        <form method="post" action="{% url 'chat_clear_balance' chat.pk %}" style="display:inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit"
+                                class="tg-btn tg-btn-sm"
+                                style="background:#3d2a0f;color:#f5a623;border:none;padding:5px 8px"
+                                title="Balansni tozalash"
+                                onclick="return confirm('Balansni 0 ga tozalaysizmi?')">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" style="text-align:center;color:#708499;padding:32px">Chat topilmadi</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:#708499;padding:40px">Chat topilmadi</td></tr>
             {% endfor %}
         </tbody>
     </table></div>
 </div>
 
+<!-- ── Sahifalash ─────────────────────────────────────── -->
 {% if chats.has_other_pages %}
 <div class="tg-pagination">
     {% if chats.has_previous %}
-    <a class="tg-page-btn" href="?page={{ chats.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    <a class="tg-page-btn" href="?page={{ chats.previous_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
     {% for num in chats.paginator.page_range %}
         {% if chats.number == num %}
         <span class="tg-page-btn active">{{ num }}</span>
         {% elif num > chats.number|add:'-3' and num < chats.number|add:'3' %}
-        <a class="tg-page-btn" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}">{{ num }}</a>
+        <a class="tg-page-btn" href="?page={{ num }}{% if qs %}&{{ qs }}{% endif %}">{{ num }}</a>
         {% endif %}
     {% endfor %}
     {% if chats.has_next %}
-    <a class="tg-page-btn" href="?page={{ chats.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    <a class="tg-page-btn" href="?page={{ chats.next_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
     {% endif %}
 </div>
 {% endif %}

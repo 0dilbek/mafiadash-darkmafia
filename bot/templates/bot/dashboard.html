@@ -2,42 +2,172 @@
 {% block title %}Dashboard - MafiaDash{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1><i class="bi bi-speedometer2 me-2" style="color:#5288c1"></i>Dashboard</h1>
-    <p>Bot statistikasi va umumiy ma'lumotlar</p>
+<div class="page-header d-flex align-items-start justify-content-between flex-wrap gap-2">
+    <div>
+        <h1><i class="bi bi-speedometer2 me-2" style="color:#5288c1"></i>Dashboard</h1>
+        <p>Bot statistikasi va umumiy ma'lumotlar</p>
+    </div>
 </div>
 
-<!-- Stat cards -->
-<div class="row g-3 mb-4">
+<!-- ── Doimiy stat kartlar ─────────────────────────────── -->
+<div class="row g-3 mb-3">
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="icon" style="background:#1a3049"><i class="bi bi-people" style="color:#5288c1"></i></div>
-            <div class="value">{{ total_users }}</div>
+            <div class="value" data-count="{{ total_users }}">0</div>
             <div class="label">Jami foydalanuvchilar</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="icon" style="background:#3d2a0f"><i class="bi bi-star" style="color:#ffd700"></i></div>
-            <div class="value" style="color:#ffd700">{{ total_vip }}</div>
+            <div class="value" style="color:#ffd700" data-count="{{ total_vip }}">0</div>
             <div class="label">VIP foydalanuvchilar</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="icon" style="background:#1a2d1a"><i class="bi bi-chat-dots" style="color:#4dbe68"></i></div>
-            <div class="value" style="color:#4dbe68">{{ total_chats }}</div>
+            <div class="value" style="color:#4dbe68" data-count="{{ total_chats }}">0</div>
             <div class="label">Jami guruhlar</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="icon" style="background:#162a3d"><i class="bi bi-arrow-left-right" style="color:#71bafa"></i></div>
-            <div class="value" style="color:#71bafa">{{ total_transfers }}</div>
-            <div class="label">Jami transferlar</div>
+        <a href="{% url 'active_games' %}" style="text-decoration:none">
+            <div class="stat-card" style="border-color:{% if active_games_count > 0 %}#2d6b3a{% else %}#1c2733{% endif %}">
+                <div class="icon" style="background:#1a3d2a;position:relative">
+                    <i class="bi bi-controller" style="color:#4dbe68"></i>
+                    {% if active_games_count > 0 %}<span style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#4dbe68;border-radius:50%;animation:pulse 1.5s infinite"></span>{% endif %}
+                </div>
+                <div class="value" style="color:#4dbe68" data-count="{{ active_games_count }}">0</div>
+                <div class="label">Faol o'yinlar (hozir)</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ── Davr filtri + stat kartlar ─────────────────────── -->
+<div class="tg-card mb-4">
+    <div style="padding:14px 18px;border-bottom:1px solid #1c2733;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <span style="color:#708499;font-size:0.85rem">Davr: <strong style="color:#f5f5f5">{{ period_label }}</strong></span>
+        <div class="filter-tabs">
+            <a href="?" class="filter-tab {% if not sp %}active{% endif %}">Barcha vaqt</a>
+            <a href="?sp=today" class="filter-tab {% if sp == 'today' %}active{% endif %}">Bugun</a>
+            <a href="?sp=week" class="filter-tab {% if sp == 'week' %}active{% endif %}">Hafta</a>
+            <a href="?sp=month" class="filter-tab {% if sp == 'month' %}active{% endif %}">Oy</a>
+            <a href="?sp=year" class="filter-tab {% if sp == 'year' %}active{% endif %}">Yil</a>
+        </div>
+    </div>
+    <div class="row g-0" style="padding:16px">
+        <div class="col-6 col-md-2 p-2">
+            <div style="background:#1c2631;border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:#5288c1" data-count="{{ period_games }}">0</div>
+                <div style="font-size:0.78rem;color:#708499;margin-top:2px">O'yinlar</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2 p-2">
+            <div style="background:#1c2631;border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:#71bafa" data-count="{{ period_players }}">0</div>
+                <div style="font-size:0.78rem;color:#708499;margin-top:2px">O'yinchilar</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2 p-2">
+            <div style="background:#1c2631;border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:#adb5bd" data-count="{{ period_transfers }}">0</div>
+                <div style="font-size:0.78rem;color:#708499;margin-top:2px">Transferlar</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2 p-2">
+            <div style="background:#1c2631;border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:#4dbe68" data-count="{{ dollar_total }}">0</div>
+                <div style="font-size:0.78rem;color:#708499;margin-top:2px">💵 Dollar</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2 p-2">
+            <div style="background:#1c2631;border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:#71bafa" data-count="{{ diamond_total }}">0</div>
+                <div style="font-size:0.78rem;color:#708499;margin-top:2px">💎 Diamond</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2 p-2">
+            <div style="background:#1c2631;border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:#f5a623" data-count="{{ period_new_chats }}">0</div>
+                <div style="font-size:0.78rem;color:#708499;margin-top:2px">Yangi guruhlar</div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- ── Diagrammalar ────────────────────────────────────── -->
+<div class="tg-card mb-4">
+    <div style="padding:14px 18px;border-bottom:1px solid #1c2733;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="font-size:0.9rem;font-weight:600;color:#adb5bd;display:flex;align-items:center;gap:8px">
+            <i class="bi bi-graph-up" style="color:#5288c1"></i> Faollik dinamikasi
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="chartPeriodBtns">
+            <button class="filter-tab active" data-period="12h">12 soat</button>
+            <button class="filter-tab" data-period="24h">24 soat</button>
+            <button class="filter-tab" data-period="today">Bugun</button>
+            <button class="filter-tab" data-period="week">Hafta</button>
+            <button class="filter-tab" data-period="month">Oy</button>
+            <button class="filter-tab" data-period="year">Yil</button>
+        </div>
+    </div>
+    <div class="row g-0">
+        <div class="col-md-6" style="padding:20px;border-right:1px solid #1c2733">
+            <div style="font-size:0.82rem;color:#708499;margin-bottom:10px"><i class="bi bi-bar-chart me-1" style="color:#5288c1"></i>O'yinlar soni</div>
+            <div style="height:220px;position:relative">
+                <canvas id="gamesChart"></canvas>
+                <div id="gamesLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#708499;font-size:0.85rem">
+                    <i class="bi bi-hourglass-split me-2"></i>Yuklanmoqda...
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6" style="padding:20px">
+            <div style="font-size:0.82rem;color:#708499;margin-bottom:10px"><i class="bi bi-people me-1" style="color:#4dbe68"></i>O'yinchilar soni</div>
+            <div style="height:220px;position:relative">
+                <canvas id="playersChart"></canvas>
+                <div id="playersLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#708499;font-size:0.85rem">
+                    <i class="bi bi-hourglass-split me-2"></i>Yuklanmoqda...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Faol o'yinlar ──────────────────────────────────── -->
+{% if recent_active %}
+<div class="tg-card mb-4">
+    <div class="tg-card-header">
+        <div class="title"><i class="bi bi-controller" style="color:#4dbe68"></i> Faol O'yinlar</div>
+        <a href="{% url 'active_games' %}" class="tg-btn tg-btn-sm tg-btn-ghost">Barchasi</a>
+    </div>
+    <div class="tg-table-wrap"><table class="tg-table">
+        <thead><tr><th>Guruh</th><th>O'yinchilar</th><th>Holat</th><th>Rejim</th><th>Boshlangan</th><th></th></tr></thead>
+        <tbody>
+            {% for g in recent_active %}
+            <tr>
+                <td style="font-weight:600;color:#f5f5f5">{{ g.chat.title|truncatechars:28 }}</td>
+                <td>
+                    <span style="color:#4dbe68;font-weight:600">{{ g.alive_pl }}</span>
+                    <span style="color:#708499"> / {{ g.total_pl }}</span>
+                    <span style="color:#708499;font-size:0.78rem"> tirik</span>
+                </td>
+                <td>
+                    {% if g.phase == 'waiting' %}<span style="background:#3d2a0f;color:#f5a623;padding:2px 8px;border-radius:20px;font-size:0.78rem">⏳ Kutilmoqda</span>
+                    {% elif g.phase == 'night' %}<span style="background:#162a3d;color:#71bafa;padding:2px 8px;border-radius:20px;font-size:0.78rem">🌙 Tun</span>
+                    {% elif g.phase == 'day' %}<span style="background:#3d2a0f;color:#f5a623;padding:2px 8px;border-radius:20px;font-size:0.78rem">☀️ Kun</span>
+                    {% else %}<span style="background:#1a3d2a;color:#4dbe68;padding:2px 8px;border-radius:20px;font-size:0.78rem">✅ Tugadi</span>{% endif %}
+                </td>
+                <td style="color:#708499;font-size:0.82rem">{{ g.mode }}</td>
+                <td style="color:#708499;font-size:0.82rem">{{ g.created_at|date:"H:i" }}</td>
+                <td><a href="{% url 'game_detail' g.pk %}" class="tg-btn tg-btn-sm tg-btn-ghost">Batafsil</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endif %}
 
 <div class="row g-4">
     <!-- Top 10 o'yinchi -->
@@ -52,12 +182,7 @@
                 <tbody>
                     {% for p in top_players %}
                     <tr>
-                        <td>
-                            {% if forloop.counter == 1 %}🥇
-                            {% elif forloop.counter == 2 %}🥈
-                            {% elif forloop.counter == 3 %}🥉
-                            {% else %}<span class="rank-badge">{{ forloop.counter }}</span>{% endif %}
-                        </td>
+                        <td>{% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}<span class="rank-badge">{{ forloop.counter }}</span>{% endif %}</td>
                         <td>
                             <div class="user-info">
                                 <div class="user-avatar">{{ p.user.full_name|default:p.user.mention|striptags|slice:":1"|upper }}</div>
@@ -120,11 +245,8 @@
                         <td><a href="{% url 'user_detail' t.to_user.id %}">{{ t.to_user.full_name|default:t.to_user.mention|striptags|truncatechars:18 }}</a></td>
                         <td><strong style="color:#f5f5f5">{{ t.amount }}</strong></td>
                         <td>
-                            {% if t.type == 'diamond' %}
-                                <span class="tg-badge tg-badge-diamond">💎 Diamond</span>
-                            {% else %}
-                                <span class="tg-badge tg-badge-dollar">💵 Dollar</span>
-                            {% endif %}
+                            {% if t.type == 'diamond' %}<span class="tg-badge tg-badge-diamond">💎 Diamond</span>
+                            {% else %}<span class="tg-badge tg-badge-dollar">💵 Dollar</span>{% endif %}
                         </td>
                         <td style="color:#708499;font-size:0.82rem">{{ t.created_at|date:"d.m.Y H:i" }}</td>
                     </tr>
@@ -136,4 +258,117 @@
         </div>
     </div>
 </div>
+
+<style>
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(1.4); }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ── Count-up animation ─────────────────────────────────
+function animateCount(el, target, duration) {
+    if (target === 0) { el.textContent = '0'; return; }
+    duration = duration || 1000;
+    const steps = 50;
+    const interval = duration / steps;
+    const step = target / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+        current = Math.min(current + step, target);
+        el.textContent = Math.floor(current).toLocaleString('en');
+        if (current >= target) clearInterval(timer);
+    }, interval);
+}
+
+document.querySelectorAll('[data-count]').forEach(el => {
+    animateCount(el, parseInt(el.dataset.count || '0'));
+});
+
+// ── Charts ─────────────────────────────────────────────
+const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 500 },
+    plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: '#232e3c',
+        borderColor: '#2b3a4a',
+        borderWidth: 1,
+        titleColor: '#adb5bd',
+        bodyColor: '#f5f5f5',
+    }},
+    scales: {
+        x: { grid: { color: '#1c2733' }, ticks: { color: '#708499', font: { size: 11 } } },
+        y: { grid: { color: '#1c2733' }, ticks: { color: '#708499', font: { size: 11 }, precision: 0 }, beginAtZero: true },
+    }
+};
+
+let gamesChart = null, playersChart = null;
+
+function initCharts(data) {
+    document.getElementById('gamesLoading').style.display = 'none';
+    document.getElementById('playersLoading').style.display = 'none';
+
+    if (gamesChart) gamesChart.destroy();
+    if (playersChart) playersChart.destroy();
+
+    gamesChart = new Chart(document.getElementById('gamesChart'), {
+        type: 'bar',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                data: data.games,
+                backgroundColor: 'rgba(82,136,193,0.55)',
+                borderColor: '#5288c1',
+                borderWidth: 1,
+                borderRadius: 4,
+            }]
+        },
+        options: chartDefaults,
+    });
+
+    playersChart = new Chart(document.getElementById('playersChart'), {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                data: data.players,
+                borderColor: '#4dbe68',
+                backgroundColor: 'rgba(77,190,104,0.12)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3,
+                pointBackgroundColor: '#4dbe68',
+            }]
+        },
+        options: chartDefaults,
+    });
+}
+
+function loadChartData(period) {
+    document.getElementById('gamesLoading').style.display = 'flex';
+    document.getElementById('playersLoading').style.display = 'flex';
+    fetch(`/api/chart-data/?period=${period}`)
+        .then(r => r.json())
+        .then(data => initCharts(data))
+        .catch(() => {
+            document.getElementById('gamesLoading').textContent = 'Xatolik';
+            document.getElementById('playersLoading').textContent = 'Xatolik';
+        });
+}
+
+// Period buttons
+document.querySelectorAll('#chartPeriodBtns [data-period]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('#chartPeriodBtns [data-period]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadChartData(btn.dataset.period);
+    });
+});
+
+// Initial load
+loadChartData('12h');
+</script>
 {% endblock %}
