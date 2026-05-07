@@ -9,7 +9,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-pt0s^+9uv*!nw6t+!!-jr
 
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.vercel.app', '.now.sh']
+ALLOWED_HOSTS = ["*"]
 
 
 INSTALLED_APPS = [
@@ -88,10 +88,4 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
 
-# Magic Link
-# .env da: ADMIN_TELEGRAM_IDS=123456789,987654321
-ADMIN_TELEGRAM_IDS = [
-    int(x.strip()) for x in os.environ.get('ADMIN_TELEGRAM_IDS', '').split(',')
-    if x.strip().isdigit()
-]
 DASHBOARD_URL = os.environ.get('DASHBOARD_URL', 'http://localhost:8000')
