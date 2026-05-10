@@ -3,12 +3,16 @@ Bot tomoni uchun MafiaDash panel link snippet.
 Bu kodni o'zingizning aiogram botingizga qo'shing.
 
 Zarur .env o'zgaruvchilari:
-    PANEL_API_URL=https://yourdomain.com/api/generate-link/
-    BOT_API_SECRET=your_shared_secret_here   # Django dagi BOT_API_SECRET bilan bir xil
+    PANEL_API_URL=http://77.42.67.218/api/generate-link/
     ADMIN_TELEGRAM_IDS=123456789,987654321
 
 Ishlash tartibi:
-    Bot → POST /api/generate-link/ → Django token yaratadi → URL qaytaradi → Bot tugma ko'rsatadi
+    Bot → GET /api/generate-link/?chat_id=... → Django token yaratadi → URL qaytaradi → Bot tugma ko'rsatadi
+
+Rol tartibi haqida:
+    chat_role_order jadvalidagi roles maydoni RoleNames qiymatlarini saqlaydi.
+    Masalan: ["🤵🏻 Don", "🕵🏼 Komissar katani", "👨🏼 Tinch axoli", ...]
+    Bot rol taqsimlashda shu jadvaldan o'qiydi, yo'q bo'lsa DEFAULT_ROLE_ORDER ishlatadi.
 """
 import os
 import logging

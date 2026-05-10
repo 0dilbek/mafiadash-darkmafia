@@ -18,53 +18,48 @@ from .models import (
 )
 
 # ── Rol tizimlari ──────────────────────────────────────────────────────────────
+# Kalit = botdagi RoleNames qiymati (bazada shu holda saqlanadi)
 
 ROLE_TEAMS = {
-    'KOMISSAR': 'tinch', 'SERJANT': 'tinch', 'KOLDUN': 'tinch',
-    'DAYDI':    'tinch', 'DOKTOR':  'tinch', 'KEZUVCHI': 'tinch',
-    'FUQARO':   'tinch', 'JANOB':   'tinch', 'AFSUNGAR': 'tinch',
-    'DON':      'mafia', 'MAFIA':   'mafia', 'ADVOKAT':  'mafia',
-    'OVCHI':    'mafia', 'JURNALIST': 'mafia',
-    'AFERIST':  'yakka', 'GAZABDOR': 'yakka', 'JOKER':   'yakka',
-    'KIMYOGAR': 'yakka', 'MINIOR':  'yakka', 'QOTIL':   'yakka',
-    'SUIDSID':  'yakka', 'VAMPIR':  'yakka', 'BORI':    'yakka',
-    'SEHRGAR':  'yakka',
-}
-
-ROLE_LABELS = {
-    'DON':       '🤵🏻 Don',
-    'MAFIA':     '🤵🏼 Mafia',
-    'KOMISSAR':  '🕵🏼 Komissar katani',
-    'DOKTOR':    '👨🏼‍⚕️ Doktor',
-    'SERJANT':   '👮🏼 Serjant',
-    'FUQARO':    '👨🏼 Tinch axoli',
-    'DAYDI':     '🧙‍♂️ Daydi',
-    'KEZUVCHI':  '💊 Anistizolog',
-    'ADVOKAT':   '👨🏼‍💼 Advokat',
-    'SUIDSID':   '🤦🏼 Suidsid',
-    'JANOB':     '🎖 Janob',
-    'BORI':      '🦎 Buqalamun',
-    'QOTIL':     '🔪 Qotil',
-    'OVCHI':     '🥷 Убийца',
-    'AFSUNGAR':  '💣 Afsungar',
-    'AFERIST':   '🤹🏻 Aferist',
-    'GAZABDOR':  "🧌 G'azabkor",
-    'SEHRGAR':   '🧙 Sehrgar',
-    'JURNALIST': '👩🏼‍💻 Jurnalist',
-    'KOLDUN':    '⚡️ Koldun',
-    'JOKER':     '🤡 Joker',
-    'MINIOR':    '☠️ Minior',
-    'KIMYOGAR':  '👨‍🔬 Kimyogar',
-    'VAMPIR':    '🧛🏻 Vampir',
+    '🕵🏼 Komissar katani': 'tinch',
+    '👮🏼 Serjant':         'tinch',
+    '⚡️ Koldun':           'tinch',
+    '🧙‍♂️ Daydi':           'tinch',
+    '👨🏼‍⚕️ Doktor':         'tinch',
+    '💊 Anistizolog':       'tinch',
+    '👨🏼 Tinch axoli':     'tinch',
+    '🎖 Janob':             'tinch',
+    '💣 Afsungar':          'tinch',
+    '🤵🏻 Don':              'mafia',
+    '🤵🏼 Mafia':            'mafia',
+    '👨🏼‍💼 Advokat':         'mafia',
+    '🥷 Убийца':            'mafia',
+    '👩🏼‍💻 Jurnalist':       'mafia',
+    '🤹🏻 Aferist':          'yakka',
+    "🧌 G'azabkor":         'yakka',
+    '🤡 Joker':             'yakka',
+    '👨‍🔬 Kimyogar':         'yakka',
+    '☠️ Minior':            'yakka',
+    '🔪 Qotil':             'yakka',
+    '🤦🏼 Suidsid':          'yakka',
+    '🧛🏻 Vampir':           'yakka',
+    '🦎 Buqalamun':         'yakka',
+    '🧙 Sehrgar':           'yakka',
 }
 
 DEFAULT_ROLE_ORDER = [
-    'DON', 'KOMISSAR', 'DOKTOR', 'FUQARO', 'FUQARO', 'DAYDI', 'MAFIA', 'KEZUVCHI',
-    'BORI', 'AFSUNGAR', 'FUQARO', 'SUIDSID', 'ADVOKAT', 'QOTIL', 'FUQARO', 'JANOB',
-    'JURNALIST', 'AFERIST', 'FUQARO', 'SEHRGAR', 'AFSUNGAR', 'SERJANT', 'MAFIA',
-    'GAZABDOR', 'OVCHI', 'BORI', 'FUQARO', 'MINIOR', 'AFSUNGAR', 'JOKER', 'FUQARO',
-    'VAMPIR', 'MAFIA', 'SERJANT', 'FUQARO', 'KIMYOGAR', 'AFSUNGAR', 'BORI', 'MAFIA',
-    'SERJANT', 'FUQARO', 'VAMPIR', 'MAFIA', 'FUQARO', 'FUQARO',
+    '🤵🏻 Don',        '🕵🏼 Komissar katani', '👨🏼‍⚕️ Doktor',     '👨🏼 Tinch axoli',
+    '👨🏼 Tinch axoli', '🧙‍♂️ Daydi',          '🤵🏼 Mafia',        '💊 Anistizolog',
+    '🦎 Buqalamun',   '💣 Afsungar',          '👨🏼 Tinch axoli',  '🤦🏼 Suidsid',
+    '👨🏼‍💼 Advokat',    '🔪 Qotil',            '👨🏼 Tinch axoli',  '🎖 Janob',
+    '👩🏼‍💻 Jurnalist',  '🤹🏻 Aferist',         '👨🏼 Tinch axoli',  '🧙 Sehrgar',
+    '💣 Afsungar',    '👮🏼 Serjant',          '🤵🏼 Mafia',        "🧌 G'azabkor",
+    '🥷 Убийца',      '🦎 Buqalamun',         '👨🏼 Tinch axoli',  '☠️ Minior',
+    '💣 Afsungar',    '🤡 Joker',             '👨🏼 Tinch axoli',  '🧛🏻 Vampir',
+    '🤵🏼 Mafia',      '👮🏼 Serjant',          '👨🏼 Tinch axoli',  '👨‍🔬 Kimyogar',
+    '💣 Afsungar',    '🦎 Buqalamun',         '🤵🏼 Mafia',        '👮🏼 Serjant',
+    '👨🏼 Tinch axoli', '🧛🏻 Vampir',          '🤵🏼 Mafia',        '👨🏼 Tinch axoli',
+    '👨🏼 Tinch axoli',
 ]
 
 
@@ -687,7 +682,7 @@ def group_role_order(request):
         return JsonResponse({'ok': True})
 
     role_data = [
-        {'name': r, 'label': ROLE_LABELS.get(r, r), 'team': ROLE_TEAMS.get(r, 'unknown')}
+        {'name': r, 'team': ROLE_TEAMS.get(r, 'unknown')}
         for r in obj.roles
     ]
     return render(request, 'bot/group_role_order.html', {
@@ -696,5 +691,4 @@ def group_role_order(request):
         'roles_json': _json.dumps(obj.roles),
         'default_roles_json': _json.dumps(DEFAULT_ROLE_ORDER),
         'role_teams_json': _json.dumps(ROLE_TEAMS),
-        'role_labels_json': _json.dumps(ROLE_LABELS),
     })
