@@ -19,47 +19,72 @@ from .models import (
 
 # ── Rol tizimlari ──────────────────────────────────────────────────────────────
 # Kalit = botdagi RoleNames qiymati (bazada shu holda saqlanadi)
+class RoleNames:
+    DON = "🤵🏻 Don"
+    MAFIA = "🤵🏼 Mafia"
+    KOMISSAR = "🕵🏼 Komissar katani"
+    DOKTOR = "👨🏼‍⚕️️ Doktor"
+    SERJANT = "👮🏼 Serjant"
+    FUQARO = "👨🏼 Tinch axoli"
+    DAYDI = "🧙‍♂️ Daydi"
+    KEZUVCHI = "💊 Anistizolog"
+    ADVOKAT = "👨🏼‍💼 Advokat"
+    SUIDSID = "🤦🏼 Suidsid"
+    JANOB = "🎖 Janob"
+    BORI = "🦎Buqalamun"
+    QOTIL = "🔪 Qotil"
+    OVCHI = "🥷 Убийца"
+    AFSUNGAR = "💣 Afsungar"
+    AFERIST = "🤹🏻 Aferist"
+    GAZABDOR = "🧌 G'azabkor"
+    SEHRGAR = "🧙 Sehrgar"
+    JURNALIST = "👩🏼‍💻 Jurnalist"
+    KOLDUN = "⚡️ Koldun"
+    JOKER = "🤡 Joker"
+    MINIOR = "☠️  Minior"
+    KIMYOGAR = "👨‍🔬 Kimyogar"
+    VAMPIR = "🧛🏻 Vampir"
 
 ROLE_TEAMS = {
-    '🕵🏼 Komissar katani': 'tinch',
-    '👮🏼 Serjant':         'tinch',
-    '⚡️ Koldun':           'tinch',
-    '🧙‍♂️ Daydi':           'tinch',
-    '👨🏼‍⚕️ Doktor':         'tinch',
-    '💊 Anistizolog':       'tinch',
-    '👨🏼 Tinch axoli':     'tinch',
-    '🎖 Janob':             'tinch',
-    '💣 Afsungar':          'tinch',
-    '🤵🏻 Don':              'mafia',
-    '🤵🏼 Mafia':            'mafia',
-    '👨🏼‍💼 Advokat':         'mafia',
-    '🥷 Убийца':            'mafia',
-    '👩🏼‍💻 Jurnalist':       'mafia',
-    '🤹🏻 Aferist':          'yakka',
-    "🧌 G'azabkor":         'yakka',
-    '🤡 Joker':             'yakka',
-    '👨‍🔬 Kimyogar':         'yakka',
-    '☠️ Minior':            'yakka',
-    '🔪 Qotil':             'yakka',
-    '🤦🏼 Suidsid':          'yakka',
-    '🧛🏻 Vampir':           'yakka',
-    '🦎 Buqalamun':         'yakka',
-    '🧙 Sehrgar':           'yakka',
+    RoleNames.KOMISSAR: 'tinch',
+    RoleNames.SERJANT:  'tinch',
+    RoleNames.KOLDUN:   'tinch',
+    RoleNames.DAYDI:    'tinch',
+    RoleNames.DOKTOR:   'tinch',
+    RoleNames.KEZUVCHI: 'tinch',
+    RoleNames.FUQARO:   'tinch',
+    RoleNames.JANOB:    'tinch',
+    RoleNames.AFSUNGAR: 'tinch',
+    RoleNames.DON:      'mafia',
+    RoleNames.MAFIA:    'mafia',
+    RoleNames.ADVOKAT:  'mafia',
+    RoleNames.OVCHI:    'mafia',
+    RoleNames.JURNALIST:'mafia',
+    RoleNames.AFERIST:  'yakka',
+    RoleNames.GAZABDOR: 'yakka',
+    RoleNames.JOKER:    'yakka',
+    RoleNames.KIMYOGAR: 'yakka',
+    RoleNames.MINIOR:   'yakka',
+    RoleNames.QOTIL:    'yakka',
+    RoleNames.SUIDSID:  'yakka',
+    RoleNames.VAMPIR:   'yakka',
+    RoleNames.BORI:     'yakka',
+    RoleNames.SEHRGAR:  'yakka',
 }
 
 DEFAULT_ROLE_ORDER = [
-    '🤵🏻 Don',        '🕵🏼 Komissar katani', '👨🏼‍⚕️ Doktor',     '👨🏼 Tinch axoli',
-    '👨🏼 Tinch axoli', '🧙‍♂️ Daydi',          '🤵🏼 Mafia',        '💊 Anistizolog',
-    '🦎 Buqalamun',   '💣 Afsungar',          '👨🏼 Tinch axoli',  '🤦🏼 Suidsid',
-    '👨🏼‍💼 Advokat',    '🔪 Qotil',            '👨🏼 Tinch axoli',  '🎖 Janob',
-    '👩🏼‍💻 Jurnalist',  '🤹🏻 Aferist',         '👨🏼 Tinch axoli',  '🧙 Sehrgar',
-    '💣 Afsungar',    '👮🏼 Serjant',          '🤵🏼 Mafia',        "🧌 G'azabkor",
-    '🥷 Убийца',      '🦎 Buqalamun',         '👨🏼 Tinch axoli',  '☠️ Minior',
-    '💣 Afsungar',    '🤡 Joker',             '👨🏼 Tinch axoli',  '🧛🏻 Vampir',
-    '🤵🏼 Mafia',      '👮🏼 Serjant',          '👨🏼 Tinch axoli',  '👨‍🔬 Kimyogar',
-    '💣 Afsungar',    '🦎 Buqalamun',         '🤵🏼 Mafia',        '👮🏼 Serjant',
-    '👨🏼 Tinch axoli', '🧛🏻 Vampir',          '🤵🏼 Mafia',        '👨🏼 Tinch axoli',
-    '👨🏼 Tinch axoli',
+    RoleNames.DON,      RoleNames.KOMISSAR,  RoleNames.DOKTOR,    RoleNames.FUQARO,
+    RoleNames.FUQARO,   RoleNames.DAYDI,     RoleNames.MAFIA,     RoleNames.KEZUVCHI,
+    RoleNames.BORI,     RoleNames.AFSUNGAR,  RoleNames.FUQARO,    RoleNames.SUIDSID,
+    RoleNames.ADVOKAT,  RoleNames.QOTIL,     RoleNames.FUQARO,    RoleNames.JANOB,
+    RoleNames.JURNALIST,RoleNames.AFERIST,   RoleNames.FUQARO,    RoleNames.SEHRGAR,
+    RoleNames.AFSUNGAR, RoleNames.SERJANT,   RoleNames.MAFIA,     RoleNames.GAZABDOR,
+    RoleNames.OVCHI,    RoleNames.BORI,      RoleNames.FUQARO,    RoleNames.MINIOR,
+    RoleNames.AFSUNGAR, RoleNames.JOKER,     RoleNames.FUQARO,    RoleNames.VAMPIR,
+    RoleNames.MAFIA,    RoleNames.SERJANT,   RoleNames.FUQARO,    RoleNames.KIMYOGAR,
+    RoleNames.AFSUNGAR, RoleNames.BORI,      RoleNames.MAFIA,     RoleNames.SERJANT,
+    RoleNames.FUQARO,   RoleNames.VAMPIR,    RoleNames.MAFIA,     RoleNames.FUQARO,
+    RoleNames.FUQARO,
 ]
 
 
