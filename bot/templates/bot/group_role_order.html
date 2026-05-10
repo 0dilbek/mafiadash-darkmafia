@@ -343,7 +343,7 @@ body {
       </div>
       <ul class="role-list" id="role-list">
         {% for r in role_data %}
-        <li class="role-item" data-role="{{ r.name }}" data-team="{{ r.team }}">
+        <li class="role-item" data-role="{{ r.key }}" data-team="{{ r.team }}">
           <i class="bi bi-grip-vertical drag-handle"></i>
           <span class="role-num">{{ forloop.counter }}</span>
           <span class="role-label">{{ r.name }}</span>
@@ -412,6 +412,7 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 const ROLE_TEAMS   = {{ role_teams_json|safe }};
+const ROLE_NAMES   = {{ role_names_json|safe }};
 const DEFAULT_ORDER = {{ default_roles_json|safe }};
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
@@ -544,17 +545,17 @@ async function saveOrder() {
 function resetToDefault() {
   if (!confirm('Default tartibga qaytarilsinmi?')) return;
   listEl.innerHTML = '';
-  DEFAULT_ORDER.forEach((role, i) => {
-    const team = ROLE_TEAMS[role] || 'unknown';
+  DEFAULT_ORDER.forEach((key, i) => {
+    const team = ROLE_TEAMS[key] || 'unknown';
     const badge = team === 'mafia' ? 'mafia' : team === 'tinch' ? 'tinch' : 'yakka';
     const li = document.createElement('li');
     li.className = 'role-item';
-    li.dataset.role = role;
+    li.dataset.role = key;
     li.dataset.team = team;
     li.innerHTML = `
       <i class="bi bi-grip-vertical drag-handle"></i>
       <span class="role-num">${i + 1}</span>
-      <span class="role-label">${role}</span>
+      <span class="role-label">${ROLE_NAMES[key] || key}</span>
       <span class="team-badge ${team}">${badge}</span>
     `;
     listEl.appendChild(li);

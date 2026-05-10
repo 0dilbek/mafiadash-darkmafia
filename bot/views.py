@@ -46,45 +46,45 @@ class RoleNames:
     VAMPIR = "🧛🏻 Vampir"
 
 ROLE_TEAMS = {
-    RoleNames.KOMISSAR: 'tinch',
-    RoleNames.SERJANT:  'tinch',
-    RoleNames.KOLDUN:   'tinch',
-    RoleNames.DAYDI:    'tinch',
-    RoleNames.DOKTOR:   'tinch',
-    RoleNames.KEZUVCHI: 'tinch',
-    RoleNames.FUQARO:   'tinch',
-    RoleNames.JANOB:    'tinch',
-    RoleNames.AFSUNGAR: 'tinch',
-    RoleNames.DON:      'mafia',
-    RoleNames.MAFIA:    'mafia',
-    RoleNames.ADVOKAT:  'mafia',
-    RoleNames.OVCHI:    'mafia',
-    RoleNames.JURNALIST:'mafia',
-    RoleNames.AFERIST:  'yakka',
-    RoleNames.GAZABDOR: 'yakka',
-    RoleNames.JOKER:    'yakka',
-    RoleNames.KIMYOGAR: 'yakka',
-    RoleNames.MINIOR:   'yakka',
-    RoleNames.QOTIL:    'yakka',
-    RoleNames.SUIDSID:  'yakka',
-    RoleNames.VAMPIR:   'yakka',
-    RoleNames.BORI:     'yakka',
-    RoleNames.SEHRGAR:  'yakka',
+    'KOMISSAR': 'tinch',
+    'SERJANT':  'tinch',
+    'KOLDUN':   'tinch',
+    'DAYDI':    'tinch',
+    'DOKTOR':   'tinch',
+    'KEZUVCHI': 'tinch',
+    'FUQARO':   'tinch',
+    'JANOB':    'tinch',
+    'AFSUNGAR': 'tinch',
+    'DON':      'mafia',
+    'MAFIA':    'mafia',
+    'ADVOKAT':  'mafia',
+    'OVCHI':    'mafia',
+    'JURNALIST':'mafia',
+    'AFERIST':  'yakka',
+    'GAZABDOR': 'yakka',
+    'JOKER':    'yakka',
+    'KIMYOGAR': 'yakka',
+    'MINIOR':   'yakka',
+    'QOTIL':    'yakka',
+    'SUIDSID':  'yakka',
+    'VAMPIR':   'yakka',
+    'BORI':     'yakka',
+    'SEHRGAR':  'yakka',
 }
 
 DEFAULT_ROLE_ORDER = [
-    RoleNames.DON,      RoleNames.KOMISSAR,  RoleNames.DOKTOR,    RoleNames.FUQARO,
-    RoleNames.FUQARO,   RoleNames.DAYDI,     RoleNames.MAFIA,     RoleNames.KEZUVCHI,
-    RoleNames.BORI,     RoleNames.AFSUNGAR,  RoleNames.FUQARO,    RoleNames.SUIDSID,
-    RoleNames.ADVOKAT,  RoleNames.QOTIL,     RoleNames.FUQARO,    RoleNames.JANOB,
-    RoleNames.JURNALIST,RoleNames.AFERIST,   RoleNames.FUQARO,    RoleNames.SEHRGAR,
-    RoleNames.AFSUNGAR, RoleNames.SERJANT,   RoleNames.MAFIA,     RoleNames.GAZABDOR,
-    RoleNames.OVCHI,    RoleNames.BORI,      RoleNames.FUQARO,    RoleNames.MINIOR,
-    RoleNames.AFSUNGAR, RoleNames.JOKER,     RoleNames.FUQARO,    RoleNames.VAMPIR,
-    RoleNames.MAFIA,    RoleNames.SERJANT,   RoleNames.FUQARO,    RoleNames.KIMYOGAR,
-    RoleNames.AFSUNGAR, RoleNames.BORI,      RoleNames.MAFIA,     RoleNames.SERJANT,
-    RoleNames.FUQARO,   RoleNames.VAMPIR,    RoleNames.MAFIA,     RoleNames.FUQARO,
-    RoleNames.FUQARO,
+    'DON',      'KOMISSAR',  'DOKTOR',    'FUQARO',
+    'FUQARO',   'DAYDI',     'MAFIA',     'KEZUVCHI',
+    'BORI',     'AFSUNGAR',  'FUQARO',    'SUIDSID',
+    'ADVOKAT',  'QOTIL',     'FUQARO',    'JANOB',
+    'JURNALIST','AFERIST',   'FUQARO',    'SEHRGAR',
+    'AFSUNGAR', 'SERJANT',   'MAFIA',     'GAZABDOR',
+    'OVCHI',    'BORI',      'FUQARO',    'MINIOR',
+    'AFSUNGAR', 'JOKER',     'FUQARO',    'VAMPIR',
+    'MAFIA',    'SERJANT',   'FUQARO',    'KIMYOGAR',
+    'AFSUNGAR', 'BORI',      'MAFIA',     'SERJANT',
+    'FUQARO',   'VAMPIR',    'MAFIA',     'FUQARO',
+    'FUQARO',
 ]
 
 
@@ -686,7 +686,6 @@ def group_role_order(request):
         defaults={'roles': DEFAULT_ROLE_ORDER},
     )
 
-    # Eski string qiymatlar (RoleNames dan oldingi) bilan saqlangan bo'lsa — reset
     valid_roles = set(ROLE_TEAMS.keys())
     if any(r not in valid_roles for r in obj.roles):
         obj.roles = DEFAULT_ROLE_ORDER
@@ -699,10 +698,9 @@ def group_role_order(request):
         except (KeyError, ValueError, _json.JSONDecodeError):
             return JsonResponse({'ok': False, 'error': 'bad_request'}, status=400)
 
-        valid = set(ROLE_TEAMS.keys())
-        bad = [r for r in roles if r not in valid]
+        bad = [r for r in roles if r not in valid_roles]
         if bad:
-            return JsonResponse({'ok': False, 'error': f"Noto'g'ri rol: {bad[0]}"}, status=400)
+            return JsonResponse({'ok': False, 'error': f"Noto'g'ri kalit: {bad[0]}"}, status=400)
 
         errs = _validate_role_order(roles)
         if errs:
@@ -712,8 +710,9 @@ def group_role_order(request):
         obj.save()
         return JsonResponse({'ok': True})
 
+    role_names_map = {k: getattr(RoleNames, k) for k in ROLE_TEAMS}
     role_data = [
-        {'name': r, 'team': ROLE_TEAMS.get(r, 'unknown')}
+        {'key': r, 'name': getattr(RoleNames, r, r), 'team': ROLE_TEAMS.get(r, 'unknown')}
         for r in obj.roles
     ]
     return render(request, 'bot/group_role_order.html', {
@@ -722,4 +721,5 @@ def group_role_order(request):
         'roles_json': _json.dumps(obj.roles),
         'default_roles_json': _json.dumps(DEFAULT_ROLE_ORDER),
         'role_teams_json': _json.dumps(ROLE_TEAMS),
+        'role_names_json': _json.dumps(role_names_map),
     })
