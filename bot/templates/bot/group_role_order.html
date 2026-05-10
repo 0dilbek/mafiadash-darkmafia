@@ -25,66 +25,95 @@
     --yakka-bg:   rgba(249,168,37,0.12);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
 body {
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     min-height: 100vh;
+    /* Drag paytida sahifa scrollini oldini olish */
+    overscroll-behavior: none;
 }
+
 .bg-glow {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
 }
 .bg-glow::before {
     content: '';
     position: absolute;
-    width: 600px; height: 600px;
+    width: 500px; height: 500px;
     background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 70%);
-    top: -200px; right: -200px;
+    top: -150px; right: -150px;
     border-radius: 50%;
 }
-.page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+/* ── Page ── */
+.page {
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto;
+    padding: 20px 16px 120px;   /* bottom padding — sticky bar uchun */
+}
+@media (min-width: 640px) { .page { padding: 28px 20px 80px; } }
 
 /* ── Header ── */
-.header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; flex-wrap: wrap; }
+.header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+}
 .back-btn {
-    display: flex; align-items: center; gap: 6px;
+    display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; flex-shrink: 0;
     background: var(--bg2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 8px 14px;
-    color: var(--gold); font-size: 0.85rem; text-decoration: none;
+    border-radius: 10px;
+    color: var(--gold); font-size: 1.1rem; text-decoration: none;
     transition: background .2s;
 }
 .back-btn:hover { background: var(--bg3); }
 .header-title {
-    flex: 1;
-    font-size: 1.2rem; font-weight: 700;
+    font-size: 1.05rem; font-weight: 700;
     background: linear-gradient(90deg, var(--gold-light), var(--gold));
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
+    line-height: 1.2;
 }
-.header-sub { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+.header-sub { color: var(--muted); font-size: 0.75rem; margin-top: 2px; }
 
 /* ── Legend ── */
 .legend {
-    display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+    display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
 }
 .legend-item {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 0.78rem; color: var(--muted);
+    display: flex; align-items: center; gap: 5px;
+    font-size: 0.75rem; color: var(--muted);
 }
-.legend-dot {
-    width: 10px; height: 10px; border-radius: 3px;
-}
+.legend-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 
-/* ── Main layout ── */
+/* ── Status pill ── */
+.status-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 12px;
+    font-size: 0.82rem; font-weight: 600;
+    margin-bottom: 16px;
+    transition: background .3s, border-color .3s;
+}
+.status-pill.ok  { background: rgba(67,160,71,0.1);  border: 1px solid rgba(67,160,71,0.3);  color: #81c784; }
+.status-pill.err { background: rgba(229,57,53,0.1); border: 1px solid rgba(229,57,53,0.3); color: #e57373; }
+.status-icon { font-size: 1rem; }
+
+/* ── Main grid ── */
 .main-grid {
     display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 24px;
-    align-items: start;
+    grid-template-columns: 1fr;
+    gap: 16px;
 }
-@media (max-width: 780px) { .main-grid { grid-template-columns: 1fr; } }
+@media (min-width: 780px) {
+    .main-grid {
+        grid-template-columns: 340px 1fr;
+        align-items: start;
+    }
+}
 
-/* ── Role list ── */
+/* ── Panel ── */
 .panel {
     background: var(--bg2);
     border: 1px solid var(--border);
@@ -92,73 +121,109 @@ body {
     overflow: hidden;
 }
 .panel-head {
-    padding: 14px 18px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border);
-    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em;
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
     color: var(--gold-dark); text-transform: uppercase;
     display: flex; align-items: center; gap: 8px;
 }
-.role-list { padding: 8px; list-style: none; min-height: 100px; }
+
+/* ── Role list ── */
+.role-list { padding: 6px; list-style: none; }
 
 .role-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 9px 10px;
+    padding: 11px 10px;           /* mobilda yetarli balandlik */
+    min-height: 52px;
     border-radius: 10px;
     margin-bottom: 3px;
     border: 1px solid transparent;
     cursor: grab;
-    transition: background .15s, border-color .15s, transform .15s;
+    transition: background .15s, border-color .15s;
     user-select: none;
+    touch-action: none;           /* SortableJS touch uchun */
+    -webkit-tap-highlight-color: transparent;
 }
 .role-item:active { cursor: grabbing; }
 .role-item.sortable-chosen {
     background: var(--bg3) !important;
     border-color: var(--gold-dark) !important;
-    transform: scale(1.01);
-    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
 }
-.role-item.sortable-ghost { opacity: 0.3; }
+.role-item.sortable-ghost { opacity: 0.25; }
 .role-item[data-team="mafia"] { background: var(--mafia-bg); border-color: rgba(229,57,53,0.15); }
 .role-item[data-team="tinch"] { background: var(--tinch-bg); border-color: rgba(67,160,71,0.15); }
 .role-item[data-team="yakka"] { background: var(--yakka-bg); border-color: rgba(249,168,37,0.15); }
 
-.drag-handle { color: var(--muted); font-size: 1rem; flex-shrink: 0; }
-.role-num {
-    width: 24px; text-align: center;
-    font-size: 0.72rem; color: var(--muted); flex-shrink: 0;
-}
-.role-label { flex: 1; font-size: 0.85rem; }
-.team-badge {
-    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em;
-    padding: 2px 7px; border-radius: 20px;
+.drag-handle {
+    color: var(--muted);
+    font-size: 1.2rem;    /* mobilda kattaroq */
     flex-shrink: 0;
+    padding: 4px;         /* touch area kengaytirish */
+}
+.role-num {
+    width: 22px; text-align: right;
+    font-size: 0.7rem; color: var(--muted);
+    flex-shrink: 0;
+}
+.role-label { flex: 1; font-size: 0.88rem; line-height: 1.3; }
+.team-badge {
+    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.05em;
+    padding: 3px 8px; border-radius: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 .team-badge.mafia { color: var(--mafia); background: rgba(229,57,53,0.18); }
 .team-badge.tinch { color: var(--tinch); background: rgba(67,160,71,0.18); }
 .team-badge.yakka { color: var(--yakka); background: rgba(249,168,37,0.18); }
 
-/* ── Right panel ── */
-.right-col { display: flex; flex-direction: column; gap: 16px; }
+/* ── Right col ── */
+.right-col { display: flex; flex-direction: column; gap: 12px; }
 
-/* ── Validation table ── */
-.val-wrap { overflow-x: auto; }
+/* ── Validation — collapsible on mobile ── */
+.val-toggle {
+    width: 100%; background: none; border: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    color: var(--gold-dark); font-size: 0.7rem; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer;
+}
+.val-toggle-icon { transition: transform .25s; font-size: 0.9rem; }
+.val-toggle.open .val-toggle-icon { transform: rotate(180deg); }
+
+.val-body-wrap {
+    max-height: 0; overflow: hidden;
+    transition: max-height .35s cubic-bezier(.4,0,.2,1);
+}
+.val-body-wrap.open { max-height: 2000px; }
+@media (min-width: 780px) {
+    .val-toggle { display: none; }
+    .val-body-wrap { max-height: none; overflow: visible; }
+}
+
+.val-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .val-table {
     width: 100%; border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
 }
 .val-table th {
-    padding: 9px 12px;
+    padding: 8px 10px;
     text-align: center;
     color: var(--muted);
-    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+    font-size: 0.66rem; font-weight: 600; letter-spacing: 0.08em;
     text-transform: uppercase;
     border-bottom: 1px solid var(--border);
+    white-space: nowrap;
 }
 .val-table th:first-child { text-align: left; }
-.val-table td { padding: 7px 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.val-table td {
+    padding: 6px 10px; text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    white-space: nowrap;
+}
 .val-table td:first-child { text-align: left; font-weight: 600; }
-.val-table tr.row-ok td:first-child { color: var(--text); }
-.val-table tr.row-err { background: rgba(229,57,53,0.08); }
+.val-table tr.row-err { background: rgba(229,57,53,0.07); }
 .val-table tr.row-err td { color: #ff6b6b; }
 .val-table .c-mafia { color: var(--mafia); font-weight: 600; }
 .val-table .c-tinch { color: var(--tinch); font-weight: 600; }
@@ -166,55 +231,75 @@ body {
 .val-table .status-ok  { color: var(--tinch); }
 .val-table .status-err { color: var(--mafia); font-weight: 600; }
 
-/* ── Error summary ── */
-.err-box {
-    background: rgba(229,57,53,0.1);
-    border: 1px solid rgba(229,57,53,0.3);
-    border-radius: 10px; padding: 12px 16px;
-    font-size: 0.82rem; color: #ff6b6b;
-    display: none;
+/* ── Sticky action bar (mobile) ── */
+.action-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+    background: rgba(9,9,14,0.92);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    display: flex; gap: 10px;
 }
-.err-box.visible { display: block; }
+@media (min-width: 780px) {
+    .action-bar {
+        position: static;
+        background: none; backdrop-filter: none;
+        border: none; padding: 0;
+        flex-direction: column;
+    }
+}
 
-/* ── Save button ── */
 .save-btn {
-    width: 100%;
-    padding: 13px;
+    flex: 1;
+    padding: 13px 16px;
     border: none; border-radius: 12px;
     background: linear-gradient(135deg, var(--gold-dark), var(--gold));
     color: #1a1200;
-    font-size: 0.9rem; font-weight: 700;
+    font-size: 0.88rem; font-weight: 700;
     cursor: pointer;
-    transition: opacity .2s, transform .1s;
+    transition: opacity .2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    -webkit-tap-highlight-color: transparent;
 }
-.save-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-.save-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.save-btn:active:not(:disabled) { opacity: 0.8; }
+.save-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .reset-btn {
-    width: 100%;
-    padding: 10px;
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; flex-shrink: 0;
     border: 1px solid var(--border); border-radius: 12px;
-    background: transparent;
+    background: var(--bg2);
     color: var(--muted);
-    font-size: 0.82rem;
+    font-size: 1rem;
     cursor: pointer;
     transition: border-color .2s, color .2s;
+    -webkit-tap-highlight-color: transparent;
 }
 .reset-btn:hover { border-color: var(--gold-dark); color: var(--gold-dark); }
+@media (min-width: 780px) {
+    .reset-btn {
+        width: 100%; height: auto; padding: 10px;
+        font-size: 0.82rem; gap: 6px;
+    }
+    .reset-btn::before { content: 'Default tartibga qaytarish'; font-size: 0.82rem; }
+}
 
 /* ── Toast ── */
 .toast {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
     background: var(--bg3); border: 1px solid var(--border);
-    border-radius: 12px; padding: 12px 20px;
-    font-size: 0.85rem; color: var(--text);
-    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    border-radius: 12px; padding: 11px 18px;
+    font-size: 0.83rem; color: var(--text);
+    box-shadow: 0 8px 32px rgba(0,0,0,.6);
     transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s;
-    opacity: 0; z-index: 100; white-space: nowrap;
+    opacity: 0; z-index: 200; white-space: nowrap;
+    pointer-events: none;
 }
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-.toast.ok  { border-color: rgba(67,160,71,0.4); color: #a5d6a7; }
-.toast.err { border-color: rgba(229,57,53,0.4); color: #ef9a9a; }
+.toast.ok  { border-color: rgba(67,160,71,0.5); color: #a5d6a7; }
+.toast.err { border-color: rgba(229,57,53,0.5); color: #ef9a9a; }
+@media (min-width: 780px) { .toast { bottom: 32px; } }
 </style>
 {% csrf_token %}
 </head>
@@ -225,7 +310,7 @@ body {
   <!-- Header -->
   <div class="header">
     <a href="{% url 'group_dashboard' %}" class="back-btn">
-      <i class="bi bi-arrow-left"></i> Orqaga
+      <i class="bi bi-arrow-left"></i>
     </a>
     <div>
       <div class="header-title">Rol tartibini sozlash</div>
@@ -235,15 +320,18 @@ body {
 
   <!-- Legend -->
   <div class="legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="background:var(--mafia)"></div> Mafia tomoni
+    <div class="legend-item"><div class="legend-dot" style="background:var(--mafia)"></div> Mafia</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--tinch)"></div> Tinch</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yakka)"></div> Yakka</div>
+    <div class="legend-item" style="margin-left:auto; font-size:0.72rem; color:var(--muted)">
+      <i class="bi bi-grip-vertical" style="color:var(--gold-dark)"></i>&nbsp;Ushlab torting
     </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:var(--tinch)"></div> Tinch tomon
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background:var(--yakka)"></div> Yakka o'yinchi
-    </div>
+  </div>
+
+  <!-- Status pill -->
+  <div class="status-pill ok" id="status-pill">
+    <i class="bi bi-check-circle status-icon"></i>
+    <span id="status-text">Tekshirilmoqda…</span>
   </div>
 
   <div class="main-grid">
@@ -251,8 +339,7 @@ body {
     <!-- Draggable role list -->
     <div class="panel">
       <div class="panel-head">
-        <i class="bi bi-list-ul"></i>
-        Rol tartibi — ushlab torting
+        <i class="bi bi-list-ul"></i> Rol tartibi
       </div>
       <ul class="role-list" id="role-list">
         {% for r in role_data %}
@@ -268,44 +355,55 @@ body {
       </ul>
     </div>
 
-    <!-- Right: validation + save -->
+    <!-- Right: validation + buttons (desktop) -->
     <div class="right-col">
 
-      <!-- Error summary -->
-      <div class="err-box" id="err-box"></div>
-
-      <!-- Validation table -->
+      <!-- Validation table — collapsible on mobile -->
       <div class="panel">
-        <div class="panel-head">
-          <i class="bi bi-shield-check"></i>
-          Muvozanat tekshiruvi
-        </div>
-        <div class="val-wrap">
-          <table class="val-table">
-            <thead>
-              <tr>
-                <th>O'yinchilar</th>
-                <th>Mafia</th>
-                <th>Tinch</th>
-                <th>Yakka</th>
-                <th>Holat</th>
-              </tr>
-            </thead>
-            <tbody id="val-body"></tbody>
-          </table>
+        <button class="val-toggle" id="val-toggle" onclick="toggleVal()">
+          <span style="display:flex;align-items:center;gap:8px">
+            <i class="bi bi-shield-check"></i> Muvozanat tekshiruvi
+          </span>
+          <i class="bi bi-chevron-down val-toggle-icon" id="val-icon"></i>
+        </button>
+        <div class="val-body-wrap" id="val-body-wrap">
+          <div class="val-wrap">
+            <table class="val-table">
+              <thead>
+                <tr>
+                  <th>Kishi</th>
+                  <th>Mafia</th>
+                  <th>Tinch</th>
+                  <th>Yakka</th>
+                  <th>Holat</th>
+                </tr>
+              </thead>
+              <tbody id="val-body"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Buttons -->
-      <button class="save-btn" id="save-btn" onclick="saveOrder()">
-        <i class="bi bi-check-lg"></i> Saqlash
-      </button>
-      <button class="reset-btn" onclick="resetToDefault()">
-        <i class="bi bi-arrow-counterclockwise"></i> Default tartibga qaytarish
-      </button>
+      <!-- Desktop-only buttons (mobile uses sticky bar) -->
+      <div class="action-bar" id="action-bar-desktop" style="display:none">
+        <button class="save-btn" id="save-btn-desktop" onclick="saveOrder()">
+          <i class="bi bi-check-lg"></i> Saqlash
+        </button>
+        <button class="reset-btn" onclick="resetToDefault()"></button>
+      </div>
 
     </div>
   </div>
+</div>
+
+<!-- Sticky action bar (mobile) -->
+<div class="action-bar" id="action-bar-mobile">
+  <button class="reset-btn" onclick="resetToDefault()" title="Default tartibga qaytarish">
+    <i class="bi bi-arrow-counterclockwise"></i>
+  </button>
+  <button class="save-btn" id="save-btn" onclick="saveOrder()">
+    <i class="bi bi-check-lg"></i> Saqlash
+  </button>
 </div>
 
 <!-- Toast -->
@@ -316,16 +414,48 @@ body {
 const ROLE_TEAMS   = {{ role_teams_json|safe }};
 const ROLE_LABELS  = {{ role_labels_json|safe }};
 const DEFAULT_ORDER = {{ default_roles_json|safe }};
-
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// ── Layout ──
+function isDesktop() { return window.innerWidth >= 780; }
+function syncLayout() {
+  const desktopBar = document.getElementById('action-bar-desktop');
+  const mobileBar  = document.getElementById('action-bar-mobile');
+  if (isDesktop()) {
+    desktopBar.style.display = 'flex';
+    mobileBar.style.display  = 'none';
+    // Desktop da val table har doim ochiq
+    document.getElementById('val-body-wrap').classList.add('open');
+    document.getElementById('val-toggle').style.display = 'none';
+  } else {
+    desktopBar.style.display = 'none';
+    mobileBar.style.display  = 'flex';
+    document.getElementById('val-toggle').style.display = 'flex';
+  }
+}
+syncLayout();
+window.addEventListener('resize', syncLayout);
+
+// ── Validation table toggle (mobile) ──
+function toggleVal() {
+  const wrap = document.getElementById('val-body-wrap');
+  const btn  = document.getElementById('val-toggle');
+  const icon = document.getElementById('val-icon');
+  const open = wrap.classList.toggle('open');
+  btn.classList.toggle('open', open);
+}
 
 // ── SortableJS ──
 const listEl = document.getElementById('role-list');
 Sortable.create(listEl, {
-  animation: 180,
+  animation: 150,
   ghostClass: 'sortable-ghost',
   chosenClass: 'sortable-chosen',
   handle: '.drag-handle',
+  // Touch sozlamalari
+  delay: 0,
+  delayOnTouchOnly: false,
+  touchStartThreshold: 3,
   onEnd: () => { updateNumbers(); updateValidation(); },
 });
 
@@ -342,7 +472,7 @@ function updateValidation() {
   const roles = getRoles();
   const tbody = document.getElementById('val-body');
   tbody.innerHTML = '';
-  let hasError = false;
+  let errCount = 0;
 
   for (let n = 4; n <= roles.length; n++) {
     const sl = roles.slice(0, n);
@@ -350,46 +480,50 @@ function updateValidation() {
     const tinch = sl.filter(r => ROLE_TEAMS[r] === 'tinch').length;
     const yakka = sl.filter(r => ROLE_TEAMS[r] === 'yakka').length;
     const ok = mafia < tinch;
-    if (!ok) hasError = true;
+    if (!ok) errCount++;
 
     const tr = document.createElement('tr');
     tr.className = ok ? 'row-ok' : 'row-err';
     tr.innerHTML = `
-      <td>${n} kishi</td>
+      <td>${n}</td>
       <td class="c-mafia">${mafia}</td>
       <td class="c-tinch">${tinch}</td>
       <td class="c-yakka">${yakka}</td>
-      <td class="${ok ? 'status-ok' : 'status-err'}">${ok ? '✓' : `✗ ${mafia} ≥ ${tinch}`}</td>
+      <td class="${ok ? 'status-ok' : 'status-err'}">${ok ? '✓' : `✗ ${mafia}≥${tinch}`}</td>
     `;
     tbody.appendChild(tr);
   }
 
-  const btn = document.getElementById('save-btn');
-  btn.disabled = hasError;
-  const errBox = document.getElementById('err-box');
-  if (hasError) {
-    const errRows = [...tbody.querySelectorAll('.row-err')];
-    errBox.textContent = `${errRows.length} ta holatda mafia tinchdan oshib ketmoqda — tartibni to'g'irlang.`;
-    errBox.classList.add('visible');
+  const pill = document.getElementById('status-pill');
+  const pillText = document.getElementById('status-text');
+  const saveBtn  = document.getElementById('save-btn');
+  const saveBtnD = document.getElementById('save-btn-desktop');
+
+  if (errCount > 0) {
+    pill.className = 'status-pill err';
+    pill.querySelector('.status-icon').className = 'bi bi-exclamation-circle status-icon';
+    pillText.textContent = `${errCount} ta holatda mafia ≥ tinch — tartibni to'g'irlang`;
+    saveBtn.disabled = true;
+    if (saveBtnD) saveBtnD.disabled = true;
   } else {
-    errBox.classList.remove('visible');
+    pill.className = 'status-pill ok';
+    pill.querySelector('.status-icon').className = 'bi bi-check-circle status-icon';
+    pillText.textContent = 'Barcha holatlar to\'g\'ri — saqlashga tayyor';
+    saveBtn.disabled = false;
+    if (saveBtnD) saveBtnD.disabled = false;
   }
 }
 
 // ── Save ──
 async function saveOrder() {
   const roles = getRoles();
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true;
-  btn.textContent = 'Saqlanmoqda...';
+  const btns = [document.getElementById('save-btn'), document.getElementById('save-btn-desktop')].filter(Boolean);
+  btns.forEach(b => { b.disabled = true; b.innerHTML = 'Saqlanmoqda…'; });
 
   try {
     const res = await fetch('{% url "group_role_order" %}', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken,
-      },
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
       body: JSON.stringify({ roles }),
     });
     const data = await res.json();
@@ -402,20 +536,19 @@ async function saveOrder() {
   } catch {
     showToast('✗ Tarmoq xatosi', 'err');
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-check-lg"></i> Saqlash';
-    updateValidation();  // re-check, may re-disable
+    btns.forEach(b => { b.innerHTML = '<i class="bi bi-check-lg"></i> Saqlash'; });
+    updateValidation();
   }
 }
 
-// ── Reset to default ──
+// ── Reset ──
 function resetToDefault() {
   if (!confirm('Default tartibga qaytarilsinmi?')) return;
   listEl.innerHTML = '';
   DEFAULT_ORDER.forEach((role, i) => {
     const team = ROLE_TEAMS[role] || 'unknown';
     const label = ROLE_LABELS[role] || role;
-    const teamLabel = team === 'mafia' ? 'mafia' : team === 'tinch' ? 'tinch' : 'yakka';
+    const badge = team === 'mafia' ? 'mafia' : team === 'tinch' ? 'tinch' : 'yakka';
     const li = document.createElement('li');
     li.className = 'role-item';
     li.dataset.role = role;
@@ -424,11 +557,10 @@ function resetToDefault() {
       <i class="bi bi-grip-vertical drag-handle"></i>
       <span class="role-num">${i + 1}</span>
       <span class="role-label">${label}</span>
-      <span class="team-badge ${team}">${teamLabel}</span>
+      <span class="team-badge ${team}">${badge}</span>
     `;
     listEl.appendChild(li);
   });
-  Sortable.get(listEl) || Sortable.create(listEl, { animation: 180, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', handle: '.drag-handle', onEnd: () => { updateNumbers(); updateValidation(); } });
   updateValidation();
 }
 
@@ -439,7 +571,7 @@ function showToast(msg, type) {
   t.textContent = msg;
   t.className = `toast ${type} show`;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3000);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 // ── Init ──
