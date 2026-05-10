@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rol tartibini sozlash — {{ chat.title }}</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+:root {
+    --gold:       #d4af37;
+    --gold-light: #f5d76e;
+    --gold-dark:  #9a7820;
+    --gold-glow:  rgba(212,175,55,0.25);
+    --bg:         #09090e;
+    --bg2:        #0f0f16;
+    --bg3:        #16161f;
+    --border:     rgba(212,175,55,0.18);
+    --text:       #f0f0f0;
+    --muted:      #666680;
+    --mafia:      #e53935;
+    --mafia-bg:   rgba(229,57,53,0.12);
+    --tinch:      #43a047;
+    --tinch-bg:   rgba(67,160,71,0.12);
+    --yakka:      #f9a825;
+    --yakka-bg:   rgba(249,168,37,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+}
+.bg-glow {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+}
+.bg-glow::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 70%);
+    top: -200px; right: -200px;
+    border-radius: 50%;
+}
+.page { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+/* ── Header ── */
+.header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; flex-wrap: wrap; }
+.back-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 14px;
+    color: var(--gold); font-size: 0.85rem; text-decoration: none;
+    transition: background .2s;
+}
+.back-btn:hover { background: var(--bg3); }
+.header-title {
+    flex: 1;
+    font-size: 1.2rem; font-weight: 700;
+    background: linear-gradient(90deg, var(--gold-light), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.header-sub { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+
+/* ── Legend ── */
+.legend {
+    display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; color: var(--muted);
+}
+.legend-dot {
+    width: 10px; height: 10px; border-radius: 3px;
+}
+
+/* ── Main layout ── */
+.main-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+@media (max-width: 780px) { .main-grid { grid-template-columns: 1fr; } }
+
+/* ── Role list ── */
+.panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+.panel-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em;
+    color: var(--gold-dark); text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+}
+.role-list { padding: 8px; list-style: none; min-height: 100px; }
+
+.role-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    margin-bottom: 3px;
+    border: 1px solid transparent;
+    cursor: grab;
+    transition: background .15s, border-color .15s, transform .15s;
+    user-select: none;
+}
+.role-item:active { cursor: grabbing; }
+.role-item.sortable-chosen {
+    background: var(--bg3) !important;
+    border-color: var(--gold-dark) !important;
+    transform: scale(1.01);
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+.role-item.sortable-ghost { opacity: 0.3; }
+.role-item[data-team="mafia"] { background: var(--mafia-bg); border-color: rgba(229,57,53,0.15); }
+.role-item[data-team="tinch"] { background: var(--tinch-bg); border-color: rgba(67,160,71,0.15); }
+.role-item[data-team="yakka"] { background: var(--yakka-bg); border-color: rgba(249,168,37,0.15); }
+
+.drag-handle { color: var(--muted); font-size: 1rem; flex-shrink: 0; }
+.role-num {
+    width: 24px; text-align: center;
+    font-size: 0.72rem; color: var(--muted); flex-shrink: 0;
+}
+.role-label { flex: 1; font-size: 0.85rem; }
+.team-badge {
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em;
+    padding: 2px 7px; border-radius: 20px;
+    flex-shrink: 0;
+}
+.team-badge.mafia { color: var(--mafia); background: rgba(229,57,53,0.18); }
+.team-badge.tinch { color: var(--tinch); background: rgba(67,160,71,0.18); }
+.team-badge.yakka { color: var(--yakka); background: rgba(249,168,37,0.18); }
+
+/* ── Right panel ── */
+.right-col { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Validation table ── */
+.val-wrap { overflow-x: auto; }
+.val-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.8rem;
+}
+.val-table th {
+    padding: 9px 12px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+.val-table th:first-child { text-align: left; }
+.val-table td { padding: 7px 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.val-table td:first-child { text-align: left; font-weight: 600; }
+.val-table tr.row-ok td:first-child { color: var(--text); }
+.val-table tr.row-err { background: rgba(229,57,53,0.08); }
+.val-table tr.row-err td { color: #ff6b6b; }
+.val-table .c-mafia { color: var(--mafia); font-weight: 600; }
+.val-table .c-tinch { color: var(--tinch); font-weight: 600; }
+.val-table .c-yakka { color: var(--yakka); font-weight: 600; }
+.val-table .status-ok  { color: var(--tinch); }
+.val-table .status-err { color: var(--mafia); font-weight: 600; }
+
+/* ── Error summary ── */
+.err-box {
+    background: rgba(229,57,53,0.1);
+    border: 1px solid rgba(229,57,53,0.3);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 0.82rem; color: #ff6b6b;
+    display: none;
+}
+.err-box.visible { display: block; }
+
+/* ── Save button ── */
+.save-btn {
+    width: 100%;
+    padding: 13px;
+    border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
+    color: #1a1200;
+    font-size: 0.9rem; font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+}
+.save-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.save-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+.reset-btn {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+}
+.reset-btn:hover { border-color: var(--gold-dark); color: var(--gold-dark); }
+
+/* ── Toast ── */
+.toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 20px;
+    font-size: 0.85rem; color: var(--text);
+    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .3s;
+    opacity: 0; z-index: 100; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.ok  { border-color: rgba(67,160,71,0.4); color: #a5d6a7; }
+.toast.err { border-color: rgba(229,57,53,0.4); color: #ef9a9a; }
+</style>
+{% csrf_token %}
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <a href="{% url 'group_dashboard' %}" class="back-btn">
+      <i class="bi bi-arrow-left"></i> Orqaga
+    </a>
+    <div>
+      <div class="header-title">Rol tartibini sozlash</div>
+      <div class="header-sub">{{ chat.title }}</div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--mafia)"></div> Mafia tomoni
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--tinch)"></div> Tinch tomon
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--yakka)"></div> Yakka o'yinchi
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- Draggable role list -->
+    <div class="panel">
+      <div class="panel-head">
+        <i class="bi bi-list-ul"></i>
+        Rol tartibi — ushlab torting
+      </div>
+      <ul class="role-list" id="role-list">
+        {% for r in role_data %}
+        <li class="role-item" data-role="{{ r.name }}" data-team="{{ r.team }}">
+          <i class="bi bi-grip-vertical drag-handle"></i>
+          <span class="role-num">{{ forloop.counter }}</span>
+          <span class="role-label">{{ r.label }}</span>
+          <span class="team-badge {{ r.team }}">
+            {% if r.team == 'mafia' %}mafia{% elif r.team == 'tinch' %}tinch{% else %}yakka{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Right: validation + save -->
+    <div class="right-col">
+
+      <!-- Error summary -->
+      <div class="err-box" id="err-box"></div>
+
+      <!-- Validation table -->
+      <div class="panel">
+        <div class="panel-head">
+          <i class="bi bi-shield-check"></i>
+          Muvozanat tekshiruvi
+        </div>
+        <div class="val-wrap">
+          <table class="val-table">
+            <thead>
+              <tr>
+                <th>O'yinchilar</th>
+                <th>Mafia</th>
+                <th>Tinch</th>
+                <th>Yakka</th>
+                <th>Holat</th>
+              </tr>
+            </thead>
+            <tbody id="val-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <button class="save-btn" id="save-btn" onclick="saveOrder()">
+        <i class="bi bi-check-lg"></i> Saqlash
+      </button>
+      <button class="reset-btn" onclick="resetToDefault()">
+        <i class="bi bi-arrow-counterclockwise"></i> Default tartibga qaytarish
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+const ROLE_TEAMS   = {{ role_teams_json|safe }};
+const ROLE_LABELS  = {{ role_labels_json|safe }};
+const DEFAULT_ORDER = {{ default_roles_json|safe }};
+
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// ── SortableJS ──
+const listEl = document.getElementById('role-list');
+Sortable.create(listEl, {
+  animation: 180,
+  ghostClass: 'sortable-ghost',
+  chosenClass: 'sortable-chosen',
+  handle: '.drag-handle',
+  onEnd: () => { updateNumbers(); updateValidation(); },
+});
+
+function getRoles() {
+  return [...listEl.querySelectorAll('.role-item')].map(el => el.dataset.role);
+}
+
+function updateNumbers() {
+  listEl.querySelectorAll('.role-num').forEach((el, i) => { el.textContent = i + 1; });
+}
+
+// ── Validation ──
+function updateValidation() {
+  const roles = getRoles();
+  const tbody = document.getElementById('val-body');
+  tbody.innerHTML = '';
+  let hasError = false;
+
+  for (let n = 4; n <= roles.length; n++) {
+    const sl = roles.slice(0, n);
+    const mafia = sl.filter(r => ROLE_TEAMS[r] === 'mafia').length;
+    const tinch = sl.filter(r => ROLE_TEAMS[r] === 'tinch').length;
+    const yakka = sl.filter(r => ROLE_TEAMS[r] === 'yakka').length;
+    const ok = mafia < tinch;
+    if (!ok) hasError = true;
+
+    const tr = document.createElement('tr');
+    tr.className = ok ? 'row-ok' : 'row-err';
+    tr.innerHTML = `
+      <td>${n} kishi</td>
+      <td class="c-mafia">${mafia}</td>
+      <td class="c-tinch">${tinch}</td>
+      <td class="c-yakka">${yakka}</td>
+      <td class="${ok ? 'status-ok' : 'status-err'}">${ok ? '✓' : `✗ ${mafia} ≥ ${tinch}`}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = hasError;
+  const errBox = document.getElementById('err-box');
+  if (hasError) {
+    const errRows = [...tbody.querySelectorAll('.row-err')];
+    errBox.textContent = `${errRows.length} ta holatda mafia tinchdan oshib ketmoqda — tartibni to'g'irlang.`;
+    errBox.classList.add('visible');
+  } else {
+    errBox.classList.remove('visible');
+  }
+}
+
+// ── Save ──
+async function saveOrder() {
+  const roles = getRoles();
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saqlanmoqda...';
+
+  try {
+    const res = await fetch('{% url "group_role_order" %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken,
+      },
+      body: JSON.stringify({ roles }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('✓ Tartib saqlandi', 'ok');
+    } else {
+      const msg = data.errors ? data.errors[0] : (data.error || 'Xato');
+      showToast('✗ ' + msg, 'err');
+    }
+  } catch {
+    showToast('✗ Tarmoq xatosi', 'err');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check-lg"></i> Saqlash';
+    updateValidation();  // re-check, may re-disable
+  }
+}
+
+// ── Reset to default ──
+function resetToDefault() {
+  if (!confirm('Default tartibga qaytarilsinmi?')) return;
+  listEl.innerHTML = '';
+  DEFAULT_ORDER.forEach((role, i) => {
+    const team = ROLE_TEAMS[role] || 'unknown';
+    const label = ROLE_LABELS[role] || role;
+    const teamLabel = team === 'mafia' ? 'mafia' : team === 'tinch' ? 'tinch' : 'yakka';
+    const li = document.createElement('li');
+    li.className = 'role-item';
+    li.dataset.role = role;
+    li.dataset.team = team;
+    li.innerHTML = `
+      <i class="bi bi-grip-vertical drag-handle"></i>
+      <span class="role-num">${i + 1}</span>
+      <span class="role-label">${label}</span>
+      <span class="team-badge ${team}">${teamLabel}</span>
+    `;
+    listEl.appendChild(li);
+  });
+  Sortable.get(listEl) || Sortable.create(listEl, { animation: 180, ghostClass: 'sortable-ghost', chosenClass: 'sortable-chosen', handle: '.drag-handle', onEnd: () => { updateNumbers(); updateValidation(); } });
+  updateValidation();
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3000);
+}
+
+// ── Init ──
+updateValidation();
+</script>
+</body>
+</html>

@@ -439,7 +439,33 @@ svg.hidden-defs { position: absolute; width: 0; height: 0; }
     </div>
   </div>
 
-  <div class="footer">
+  <!-- Sozlamalar -->
+  <div class="section-title" style="margin-top:32px"><i class="bi bi-sliders"></i> Sozlamalar</div>
+  <a href="{% url 'group_role_order' %}" style="text-decoration:none">
+    <div style="
+      background:var(--bg2); border:1px solid var(--border); border-radius:14px;
+      padding:16px 20px; display:flex; align-items:center; gap:14px;
+      transition:background .2s, transform .15s;
+      " onmouseover="this.style.background='var(--bg3)';this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.background='var(--bg2)';this.style.transform='none'">
+      <div style="
+        width:44px;height:44px;border-radius:12px;flex-shrink:0;
+        background:linear-gradient(135deg,#1a1208,#3a2a08);
+        border:1px solid var(--border);
+        display:flex;align-items:center;justify-content:center;
+        font-size:1.2rem;color:var(--gold);
+      "><i class="bi bi-person-fill-gear"></i></div>
+      <div style="flex:1">
+        <div style="font-size:0.9rem;font-weight:600;color:var(--text)">Rol tartibini sozlash</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:2px">
+          Har bir o'yinchiga qaysi rol berilishini o'zgartiring
+        </div>
+      </div>
+      <i class="bi bi-chevron-right" style="color:var(--muted)"></i>
+    </div>
+  </a>
+
+  <div class="footer" style="margin-top:28px">
     <span>MafiaDash</span> · Guruh boshqaruv paneli · Real-time ma'lumotlar
   </div>
 </div>

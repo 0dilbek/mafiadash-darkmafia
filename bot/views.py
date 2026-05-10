@@ -10,10 +10,74 @@ from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
 from urllib.parse import urlencode
+import json as _json
 from .models import (
     User, BlockedUser, Profile, Transfer, VipUser, Para, Chat, Giveaway,
     Game, GamePlayer, GamePhase, GroupBalance, BlockGroups, AdminLoginToken,
+    ChatRoleOrder,
 )
+
+# ── Rol tizimlari ──────────────────────────────────────────────────────────────
+
+ROLE_TEAMS = {
+    'KOMISSAR': 'tinch', 'SERJANT': 'tinch', 'KOLDUN': 'tinch',
+    'DAYDI':    'tinch', 'DOKTOR':  'tinch', 'KEZUVCHI': 'tinch',
+    'FUQARO':   'tinch', 'JANOB':   'tinch', 'AFSUNGAR': 'tinch',
+    'DON':      'mafia', 'MAFIA':   'mafia', 'ADVOKAT':  'mafia',
+    'OVCHI':    'mafia', 'JURNALIST': 'mafia',
+    'AFERIST':  'yakka', 'GAZABDOR': 'yakka', 'JOKER':   'yakka',
+    'KIMYOGAR': 'yakka', 'MINIOR':  'yakka', 'QOTIL':   'yakka',
+    'SUIDSID':  'yakka', 'VAMPIR':  'yakka', 'BORI':    'yakka',
+    'SEHRGAR':  'yakka',
+}
+
+ROLE_LABELS = {
+    'DON':       '🤵🏻 Don',
+    'MAFIA':     '🤵🏼 Mafia',
+    'KOMISSAR':  '🕵🏼 Komissar katani',
+    'DOKTOR':    '👨🏼‍⚕️ Doktor',
+    'SERJANT':   '👮🏼 Serjant',
+    'FUQARO':    '👨🏼 Tinch axoli',
+    'DAYDI':     '🧙‍♂️ Daydi',
+    'KEZUVCHI':  '💊 Anistizolog',
+    'ADVOKAT':   '👨🏼‍💼 Advokat',
+    'SUIDSID':   '🤦🏼 Suidsid',
+    'JANOB':     '🎖 Janob',
+    'BORI':      '🦎 Buqalamun',
+    'QOTIL':     '🔪 Qotil',
+    'OVCHI':     '🥷 Убийца',
+    'AFSUNGAR':  '💣 Afsungar',
+    'AFERIST':   '🤹🏻 Aferist',
+    'GAZABDOR':  "🧌 G'azabkor",
+    'SEHRGAR':   '🧙 Sehrgar',
+    'JURNALIST': '👩🏼‍💻 Jurnalist',
+    'KOLDUN':    '⚡️ Koldun',
+    'JOKER':     '🤡 Joker',
+    'MINIOR':    '☠️ Minior',
+    'KIMYOGAR':  '👨‍🔬 Kimyogar',
+    'VAMPIR':    '🧛🏻 Vampir',
+}
+
+DEFAULT_ROLE_ORDER = [
+    'DON', 'KOMISSAR', 'DOKTOR', 'FUQARO', 'FUQARO', 'DAYDI', 'MAFIA', 'KEZUVCHI',
+    'BORI', 'AFSUNGAR', 'FUQARO', 'SUIDSID', 'ADVOKAT', 'QOTIL', 'FUQARO', 'JANOB',
+    'JURNALIST', 'AFERIST', 'FUQARO', 'SEHRGAR', 'AFSUNGAR', 'SERJANT', 'MAFIA',
+    'GAZABDOR', 'OVCHI', 'BORI', 'FUQARO', 'MINIOR', 'AFSUNGAR', 'JOKER', 'FUQARO',
+    'VAMPIR', 'MAFIA', 'SERJANT', 'FUQARO', 'KIMYOGAR', 'AFSUNGAR', 'BORI', 'MAFIA',
+    'SERJANT', 'FUQARO', 'VAMPIR', 'MAFIA', 'FUQARO', 'FUQARO',
+]
+
+
+def _validate_role_order(roles):
+    """Har bir o'yinchilar sonida mafia < tinch bo'lishini tekshiradi."""
+    errors = []
+    for n in range(4, len(roles) + 1):
+        sl = roles[:n]
+        mafia = sum(1 for r in sl if ROLE_TEAMS.get(r) == 'mafia')
+        tinch = sum(1 for r in sl if ROLE_TEAMS.get(r) == 'tinch')
+        if mafia >= tinch:
+            errors.append(f"{n} kishi: mafia ({mafia}) ≥ tinch ({tinch})")
+    return errors
 
 
 def _stat_period_filter(period):
@@ -587,4 +651,50 @@ def group_chart_data(request):
         'labels':  [b.strftime(fmt) for b in buckets],
         'games':   [games_d.get(b, 0) for b in buckets],
         'players': [players_d.get(b, 0) for b in buckets],
+    })
+
+
+def group_role_order(request):
+    if not _tg_auth_required(request):
+        return redirect('magic_login_error')
+
+    tg_chat_id = request.session['tg_chat_id']
+    chat = Chat.objects.filter(chat_id=tg_chat_id).first()
+
+    obj, _ = ChatRoleOrder.objects.get_or_create(
+        chat_id=tg_chat_id,
+        defaults={'roles': DEFAULT_ROLE_ORDER},
+    )
+
+    if request.method == 'POST':
+        try:
+            data = _json.loads(request.body)
+            roles = list(data['roles'])
+        except (KeyError, ValueError, _json.JSONDecodeError):
+            return JsonResponse({'ok': False, 'error': 'bad_request'}, status=400)
+
+        valid = set(ROLE_TEAMS.keys())
+        bad = [r for r in roles if r not in valid]
+        if bad:
+            return JsonResponse({'ok': False, 'error': f"Noto'g'ri rol: {bad[0]}"}, status=400)
+
+        errs = _validate_role_order(roles)
+        if errs:
+            return JsonResponse({'ok': False, 'errors': errs}, status=422)
+
+        obj.roles = roles
+        obj.save()
+        return JsonResponse({'ok': True})
+
+    role_data = [
+        {'name': r, 'label': ROLE_LABELS.get(r, r), 'team': ROLE_TEAMS.get(r, 'unknown')}
+        for r in obj.roles
+    ]
+    return render(request, 'bot/group_role_order.html', {
+        'chat': chat,
+        'role_data': role_data,
+        'roles_json': _json.dumps(obj.roles),
+        'default_roles_json': _json.dumps(DEFAULT_ROLE_ORDER),
+        'role_teams_json': _json.dumps(ROLE_TEAMS),
+        'role_labels_json': _json.dumps(ROLE_LABELS),
     })

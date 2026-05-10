@@ -30,6 +30,7 @@ urlpatterns = [
 
     path('group/<uuid:token>/', views.panel_entry, name='panel_entry'),
     path('group/', views.group_dashboard, name='group_dashboard'),
+    path('group/roles/', views.group_role_order, name='group_role_order'),
     path('api/group-chart/', views.group_chart_data, name='group_chart_data'),
 
     path('api/generate-link/', views.generate_panel_link, name='generate_panel_link'),

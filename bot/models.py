@@ -693,3 +693,14 @@ class GeroyMarket(models.Model):
     class Meta:
         db_table = "geroymarket"
         managed = False
+
+
+class ChatRoleOrder(models.Model):
+    """Guruh uchun rol tartibini saqlaydi — botdagi default tartibni o'zgartirish imkoni."""
+    chat_id = models.BigIntegerField(unique=True)
+    roles = models.JSONField(default=list)   # ["DON", "KOMISSAR", ...]
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "chat_role_order"
+        managed = True
