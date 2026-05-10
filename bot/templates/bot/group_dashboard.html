@@ -1,3 +1,4 @@
+{% load bot_filters %}
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -435,7 +436,7 @@ svg.hidden-defs { position: absolute; width: 0; height: 0; }
     </div>
     <div class="game-meta">
       <div class="game-meta-item">Rejim: <strong>{{ active_game.mode }}</strong></div>
-      <div class="game-meta-item">Boshlangan: <strong>{{ active_game.created_at|date:"H:i · d.m.Y" }}</strong></div>
+      <div class="game-meta-item">Boshlangan: <strong>{{ active_game.created_at|tz5|date:"H:i · d.m.Y" }}</strong></div>
     </div>
   </div>
   {% else %}

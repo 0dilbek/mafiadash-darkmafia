@@ -1,4 +1,5 @@
 {% extends 'bot/base.html' %}
+{% load bot_filters %}
 {% block title %}Transferlar - MafiaDash{% endblock %}
 
 {% block content %}
@@ -34,7 +35,7 @@
                         <span class="tg-badge tg-badge-dollar">💵 Dollar</span>
                     {% endif %}
                 </td>
-                <td style="color:#708499;font-size:0.82rem">{{ t.created_at|date:"d.m.Y H:i" }}</td>
+                <td style="color:#708499;font-size:0.82rem">{{ t.created_at|tz5|date:"d.m.Y H:i" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="6" style="text-align:center;color:#708499;padding:32px">Transfer topilmadi</td></tr>

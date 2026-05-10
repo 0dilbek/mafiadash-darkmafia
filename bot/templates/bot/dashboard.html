@@ -1,4 +1,5 @@
 {% extends 'bot/base.html' %}
+{% load bot_filters %}
 {% block title %}Dashboard - MafiaDash{% endblock %}
 
 {% block content %}
@@ -160,7 +161,7 @@
                     {% else %}<span style="background:#1a3d2a;color:#4dbe68;padding:2px 8px;border-radius:20px;font-size:0.78rem">✅ Tugadi</span>{% endif %}
                 </td>
                 <td style="color:#708499;font-size:0.82rem">{{ g.mode }}</td>
-                <td style="color:#708499;font-size:0.82rem">{{ g.created_at|date:"H:i" }}</td>
+                <td style="color:#708499;font-size:0.82rem">{{ g.created_at|tz5|date:"H:i" }}</td>
                 <td><a href="{% url 'game_detail' g.pk %}" class="tg-btn tg-btn-sm tg-btn-ghost">Batafsil</a></td>
             </tr>
             {% endfor %}
@@ -248,7 +249,7 @@
                             {% if t.type == 'diamond' %}<span class="tg-badge tg-badge-diamond">💎 Diamond</span>
                             {% else %}<span class="tg-badge tg-badge-dollar">💵 Dollar</span>{% endif %}
                         </td>
-                        <td style="color:#708499;font-size:0.82rem">{{ t.created_at|date:"d.m.Y H:i" }}</td>
+                        <td style="color:#708499;font-size:0.82rem">{{ t.created_at|tz5|date:"d.m.Y H:i" }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="5" style="text-align:center;color:#708499;padding:24px">Ma'lumot yo'q</td></tr>

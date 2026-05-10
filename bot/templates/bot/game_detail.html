@@ -1,4 +1,5 @@
 {% extends 'bot/base.html' %}
+{% load bot_filters %}
 {% block title %}O'yin #{{ game.pk }} - MafiaDash{% endblock %}
 
 {% block content %}
@@ -40,7 +41,7 @@
                 </div>
                 <div class="col-6 col-md-3">
                     <div style="color:#708499;font-size:0.78rem;margin-bottom:4px">Boshlangan</div>
-                    <span style="color:#adb5bd;font-size:0.88rem">{{ game.created_at|date:"d.m.Y H:i" }}</span>
+                    <span style="color:#adb5bd;font-size:0.88rem">{{ game.created_at|tz5|date:"d.m.Y H:i" }}</span>
                 </div>
                 <div class="col-6 col-md-3">
                     <div style="color:#708499;font-size:0.78rem;margin-bottom:4px">Guruh</div>
@@ -156,7 +157,7 @@
                     {% if p.win %}<span style="color:#ffd700">🏆 Ha</span>
                     {% else %}<span style="color:#708499">—</span>{% endif %}
                 </td>
-                <td style="color:#708499;font-size:0.78rem;white-space:nowrap">{{ p.joined_at|date:"H:i:s" }}</td>
+                <td style="color:#708499;font-size:0.78rem;white-space:nowrap">{{ p.joined_at|tz5|date:"H:i:s" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="8" style="text-align:center;color:#708499;padding:32px">O'yinchilar yo'q</td></tr>
@@ -189,7 +190,7 @@
                     {% endif %}
                 </td>
                 <td style="color:#708499;font-size:0.82rem">{{ ph.phase_type }}</td>
-                <td style="color:#708499;font-size:0.82rem">{{ ph.started_at|date:"H:i:s" }}</td>
+                <td style="color:#708499;font-size:0.82rem">{{ ph.started_at|tz5|date:"H:i:s" }}</td>
                 <td>
                     {% if ph.is_end %}<span class="tg-on">Tugadi</span>
                     {% else %}<span style="background:#3d2a0f;color:#f5a623;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:600">Davom etmoqda</span>{% endif %}
