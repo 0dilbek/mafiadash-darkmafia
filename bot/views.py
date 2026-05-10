@@ -686,6 +686,12 @@ def group_role_order(request):
         defaults={'roles': DEFAULT_ROLE_ORDER},
     )
 
+    # Eski string qiymatlar (RoleNames dan oldingi) bilan saqlangan bo'lsa — reset
+    valid_roles = set(ROLE_TEAMS.keys())
+    if any(r not in valid_roles for r in obj.roles):
+        obj.roles = DEFAULT_ROLE_ORDER
+        obj.save()
+
     if request.method == 'POST':
         try:
             data = _json.loads(request.body)
