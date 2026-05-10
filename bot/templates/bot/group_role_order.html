@@ -141,7 +141,6 @@ body {
     cursor: grab;
     transition: background .15s, border-color .15s;
     user-select: none;
-    touch-action: none;           /* SortableJS touch uchun */
     -webkit-tap-highlight-color: transparent;
 }
 .role-item:active { cursor: grabbing; }
@@ -157,9 +156,10 @@ body {
 
 .drag-handle {
     color: var(--muted);
-    font-size: 1.2rem;    /* mobilda kattaroq */
+    font-size: 1.2rem;
     flex-shrink: 0;
-    padding: 4px;         /* touch area kengaytirish */
+    padding: 4px 6px;
+    touch-action: none;   /* faqat handle draggable, qolgan joy scroll qiladi */
 }
 .role-num {
     width: 22px; text-align: right;
