@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.core.cache import cache
 from django.db import connection
+from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 
@@ -115,8 +116,131 @@ def calculate_stats(period, chat_id=None):
     return result
 
 
+def debug_stats(request):
+    """Vaqtinchalik debug endpoint — DB strukturasini tekshirish."""
+    out = {}
+    month_start = _period_start('month')
+
+    with connection.cursor() as cur:
+        # 1. Jami o'yinlar va phase taqsimoti
+        cur.execute("""
+            SELECT phase, is_active, COUNT(*) AS cnt
+            FROM game
+            GROUP BY phase, is_active
+            ORDER BY cnt DESC
+        """)
+        out['games_by_phase'] = [
+            {'phase': r[0], 'is_active': r[1], 'count': r[2]}
+            for r in cur.fetchall()
+        ]
+
+        # 2. Bu oy: hamma o'yinlar vs filtrdan o'tganlar
+        cur.execute("SELECT COUNT(*) FROM game WHERE created_at >= %s", [month_start])
+        out['games_this_month_total'] = cur.fetchone()[0]
+
+        cur.execute(
+            "SELECT COUNT(*) FROM game WHERE (phase='end' OR is_active=false) AND created_at >= %s",
+            [month_start]
+        )
+        out['games_this_month_filtered'] = cur.fetchone()[0]
+
+        # 3. Filtrsiz (hamma vaqt) tugagan o'yinlar
+        cur.execute("SELECT COUNT(*) FROM game WHERE phase='end' OR is_active=false")
+        out['games_finished_alltime'] = cur.fetchone()[0]
+
+        # 4. So'nggi 5 o'yin
+        cur.execute("""
+            SELECT id, phase, is_active, created_at
+            FROM game ORDER BY id DESC LIMIT 5
+        """)
+        out['recent_games'] = [
+            {'id': r[0], 'phase': r[1], 'is_active': r[2], 'created_at': str(r[3])}
+            for r in cur.fetchall()
+        ]
+
+        # 5. Bu oy ichidagi so'nggi 5 o'yin
+        cur.execute("""
+            SELECT id, phase, is_active, created_at
+            FROM game WHERE created_at >= %s ORDER BY id DESC LIMIT 5
+        """, [month_start])
+        out['recent_games_this_month'] = [
+            {'id': r[0], 'phase': r[1], 'is_active': r[2], 'created_at': str(r[3])}
+            for r in cur.fetchall()
+        ]
+
+        # 6. gameplayer join test (u.id)
+        cur.execute("""
+            SELECT gp.id, gp.user_id, gp.win, u.id AS uid, u.user_id AS tg_uid, u.full_name
+            FROM gameplayer gp
+            JOIN "user" u ON u.id = gp.user_id
+            LIMIT 3
+        """)
+        rows = cur.fetchall()
+        out['join_by_u_id'] = [
+            {'gp_id': r[0], 'gp_user_id': r[1], 'win': r[2],
+             'user_pk': r[3], 'tg_id': r[4], 'name': r[5]}
+            for r in rows
+        ] if rows else 'NO ROWS'
+
+        # 7. gameplayer join test (u.user_id)
+        cur.execute("""
+            SELECT gp.id, gp.user_id, u.id AS uid, u.user_id AS tg_uid, u.full_name
+            FROM gameplayer gp
+            JOIN "user" u ON u.user_id = gp.user_id
+            LIMIT 3
+        """)
+        rows2 = cur.fetchall()
+        out['join_by_u_user_id'] = [
+            {'gp_id': r[0], 'gp_user_id': r[1],
+             'user_pk': r[2], 'tg_id': r[3], 'name': r[4]}
+            for r in rows2
+        ] if rows2 else 'NO ROWS'
+
+        # 8. Sample score calc for 5 finished games (any time)
+        cur.execute("""
+            SELECT id FROM game WHERE phase='end' OR is_active=false
+            ORDER BY id DESC LIMIT 5
+        """)
+        sample_ids = [r[0] for r in cur.fetchall()]
+        if sample_ids:
+            cur.execute("""
+                SELECT gp.user_id, u.full_name, COUNT(*) AS played,
+                       COUNT(*) FILTER (WHERE gp.win=true) AS wins
+                FROM gameplayer gp
+                JOIN "user" u ON u.id = gp.user_id
+                WHERE gp.game_id = ANY(%s)
+                GROUP BY gp.user_id, u.full_name
+                ORDER BY wins DESC LIMIT 5
+            """, [sample_ids])
+            rows3 = cur.fetchall()
+            out['sample_scores_join_by_uid'] = [
+                {'user_id': r[0], 'name': r[1], 'played': r[2], 'wins': r[3]}
+                for r in rows3
+            ] if rows3 else 'NO ROWS'
+        else:
+            out['sample_scores_join_by_uid'] = 'NO FINISHED GAMES'
+
+        # 9. gameplayer first row raw
+        cur.execute("SELECT * FROM gameplayer LIMIT 1")
+        if cur.description:
+            cols = [d[0] for d in cur.description]
+            row = cur.fetchone()
+            out['gameplayer_first_row'] = dict(zip(cols, [str(v) for v in row])) if row else 'EMPTY'
+
+        # 10. month_start value used
+        out['month_start_used'] = str(month_start)
+
+    return JsonResponse(out, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+
+
 def landing(request):
     top_players = calculate_stats('month')[:30]
+    period_label = 'Oylik'
+
+    # Agar bu oy ma'lumot bo'lmasa — barcha vaqt bo'yicha ko'rsat
+    if not top_players:
+        top_players = calculate_stats('all')[:30]
+        period_label = "Barcha vaqt"
 
     month_start = _period_start('month')
     total_games = Game.objects.filter(
@@ -124,6 +248,12 @@ def landing(request):
     ).filter(
         djmodels.Q(phase='end') | djmodels.Q(is_active=False)
     ).count()
+
+    # Agar bu oy o'yin bo'lmasa — jami hisoblash
+    if total_games == 0:
+        total_games = Game.objects.filter(
+            djmodels.Q(phase='end') | djmodels.Q(is_active=False)
+        ).count()
 
     top_balances = (
         GroupBalance.objects
@@ -140,12 +270,14 @@ def landing(request):
         {
             'title':   chat_map.get(g.chat_id, f'Guruh #{g.chat_id}'),
             'balance': g.balance,
+            'chat_id': g.chat_id,
         }
         for g in top_balances
     ]
 
     return render(request, 'main/landing.html', {
-        'top_players': top_players,
-        'top_groups':  top_groups,
-        'total_games': total_games,
+        'top_players':   top_players,
+        'top_groups':    top_groups,
+        'total_games':   total_games,
+        'period_label':  period_label,
     })

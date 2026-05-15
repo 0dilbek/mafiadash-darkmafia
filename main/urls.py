@@ -16,4 +16,7 @@ urlpatterns = [
     # API
     path('api/group-chart/',   bot_views.group_chart_data,   name='group_chart_data'),
     path('api/generate-link/', bot_views.generate_panel_link, name='generate_panel_link'),
+
+    # Debug (vaqtinchalik)
+    path('api/debug-stats/', views.debug_stats, name='debug_stats'),
 ]
