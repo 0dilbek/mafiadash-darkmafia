@@ -25,64 +25,46 @@ body{
 }
 
 /* ═══════════════════════════════════════════
-   AURORA BACKGROUND  (GPU-only transforms)
+   STARS CANVAS
 ═══════════════════════════════════════════ */
-.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-.aur{position:absolute;border-radius:50%;will-change:transform}
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-.aur-1{
-  width:900px;height:700px;top:-320px;right:-220px;
-  background:radial-gradient(ellipse,rgba(212,175,55,.11) 0%,rgba(180,100,20,.06) 40%,transparent 68%);
-  filter:blur(90px);
-  animation:aur1 30s ease-in-out infinite;
+/* ═══════════════════════════════════════════
+   NAVBAR
+═══════════════════════════════════════════ */
+.navbar{
+  position:fixed;top:0;left:0;right:0;
+  z-index:100;
+  height:52px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 20px;
+  background:rgba(5,5,16,.82);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(212,175,55,.12);
+  transform:translateY(-100%);
+  transition:transform .4s cubic-bezier(.22,1,.36,1),
+             box-shadow .4s ease;
+  pointer-events:none;
 }
-.aur-2{
-  width:750px;height:620px;bottom:-280px;left:-180px;
-  background:radial-gradient(ellipse,rgba(120,30,170,.1) 0%,rgba(60,8,110,.05) 45%,transparent 68%);
-  filter:blur(100px);
-  animation:aur2 38s ease-in-out infinite;
+.navbar.show{
+  transform:translateY(0);
+  pointer-events:auto;
+  box-shadow:0 4px 32px rgba(0,0,0,.45);
 }
-.aur-3{
-  width:520px;height:420px;top:38%;left:12%;
-  background:radial-gradient(ellipse,rgba(212,175,55,.065) 0%,transparent 65%);
-  filter:blur(80px);
-  animation:aur3 24s ease-in-out infinite;
+.nav-logo{
+  font-size:.95rem;font-weight:900;letter-spacing:-.3px;
+  background:linear-gradient(90deg,var(--gp),var(--g1),var(--g0));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 10px rgba(212,175,55,.3));
+  white-space:nowrap;
 }
-.aur-4{
-  width:640px;height:440px;top:8%;right:18%;
-  background:radial-gradient(ellipse,rgba(160,35,35,.08) 0%,transparent 65%);
-  filter:blur(90px);
-  animation:aur4 33s ease-in-out infinite;
-}
-@keyframes aur1{
-  0%,100%{transform:translate(0,0) scale(1)}
-  25%{transform:translate(-55px,42px) scale(1.07)}
-  50%{transform:translate(28px,-48px) scale(.95)}
-  75%{transform:translate(48px,18px) scale(1.04)}
-}
-@keyframes aur2{
-  0%,100%{transform:translate(0,0) scale(1)}
-  30%{transform:translate(65px,-38px) scale(1.09)}
-  65%{transform:translate(-38px,55px) scale(.93)}
-}
-@keyframes aur3{
-  0%,100%{transform:translate(0,0) scale(1)}
-  42%{transform:translate(-48px,-28px) scale(1.14)}
-  72%{transform:translate(38px,44px) scale(.89)}
-}
-@keyframes aur4{
-  0%,100%{transform:translate(0,0) scale(1)}
-  36%{transform:translate(-28px,55px) scale(1.06)}
-  68%{transform:translate(44px,-28px) scale(.94)}
-}
-
-/* Subtle perspective grid */
-.grid-bg{
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:
-    linear-gradient(rgba(212,175,55,.022) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(212,175,55,.022) 1px,transparent 1px);
-  background-size:72px 72px;
+.nav-dot{
+  width:6px;height:6px;border-radius:50%;background:#4caf50;
+  box-shadow:0 0 7px rgba(76,175,80,.85);
+  margin-right:10px;flex-shrink:0;
+  animation:livePulse 2.2s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════════
@@ -94,7 +76,23 @@ body{
 /* ═══════════════════════════════════════════
    HERO
 ═══════════════════════════════════════════ */
-.hero{text-align:center;padding:84px 16px 60px}
+.hero{
+  text-align:center;
+  padding:84px 16px 60px;
+}
+@media(max-width:639px){
+  .hero{
+    height:100svh;
+    height:100dvh; /* override if dvh supported */
+    min-height:0;
+    padding:0 16px;
+    display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+  }
+  /* tighter gaps inside hero on mobile */
+  .live-badge{margin-bottom:20px}
+  .hero-sub{margin:14px auto 36px}
+}
 
 .live-badge{
   display:inline-flex;align-items:center;gap:9px;
@@ -483,13 +481,12 @@ body{
 </head>
 <body>
 
-<div class="aurora">
-  <div class="aur aur-1"></div>
-  <div class="aur aur-2"></div>
-  <div class="aur aur-3"></div>
-  <div class="aur aur-4"></div>
-</div>
-<div class="grid-bg"></div>
+<canvas id="stars"></canvas>
+
+<nav class="navbar">
+  <span class="nav-dot"></span>
+  <span class="nav-logo">Dark Night Mafia</span>
+</nav>
 
 <div class="wrap">
 
@@ -661,6 +658,75 @@ body{
 </div><!-- /wrap -->
 
 <script>
+/* ════════════════════════════
+   TWINKLING STARS
+════════════════════════════ */
+(function(){
+  const cvs = document.getElementById('stars');
+  const ctx  = cvs.getContext('2d');
+  let W, H, stars = [];
+
+  const PALETTES = [
+    [255,255,255],  // white
+    [255,255,255],  // white (more frequent)
+    [255,255,255],
+    [210,230,255],  // cool blue
+    [255,245,200],  // warm gold
+  ];
+
+  function resize(){
+    W = cvs.width  = window.innerWidth;
+    H = cvs.height = window.innerHeight;
+  }
+
+  function init(){
+    const n = Math.min(Math.round(W * H / 6500), 240);
+    stars = [];
+    for(let i = 0; i < n; i++){
+      const c = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+      stars.push({
+        x:     Math.random(),
+        y:     Math.random(),
+        r:     Math.random() * 1.05 + 0.25,
+        base:  Math.random() * 0.48 + 0.08,
+        phase: Math.random() * Math.PI * 2,
+        freq:  (Math.random() * 0.38 + 0.12) * 0.001,
+        c,
+      });
+    }
+  }
+
+  function draw(t){
+    ctx.clearRect(0, 0, W, H);
+    for(const s of stars){
+      const o = s.base * (0.5 + 0.5 * Math.sin(t * s.freq + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${s.c[0]},${s.c[1]},${s.c[2]},${o.toFixed(3)})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', ()=>{ resize(); init(); });
+  resize(); init();
+  requestAnimationFrame(draw);
+})();
+
+/* ════════════════════════════
+   NAVBAR  (show after hero)
+════════════════════════════ */
+(function(){
+  const nav  = document.querySelector('.navbar');
+  const hero = document.querySelector('.hero');
+  function check(){
+    const heroBottom = hero.getBoundingClientRect().bottom;
+    nav.classList.toggle('show', heroBottom < 0);
+  }
+  window.addEventListener('scroll', check, { passive: true });
+  check();
+})();
+
 /* ════════════════════════════
    COUNT-UP  (eased)
 ════════════════════════════ */
