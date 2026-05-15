@@ -4,6 +4,7 @@ from django.db import connection
 from django.utils import timezone
 from datetime import timedelta
 
+from django.db import models as djmodels
 from bot.models import GroupBalance, Chat, Game
 
 CHUNK_SIZE = 500
@@ -35,8 +36,8 @@ def _score_chunk(game_ids, acc):
                 GROUP BY game_id
             ),
             pd AS (
-                SELECT gp.id AS player_id,
-                       gp.user_id,
+                SELECT gp.id  AS player_id,
+                       gp.user_id,          -- bu user.id (Django PK)
                        CASE WHEN gp.win
                             THEN (2 * gs.total - gs.win_cnt)
                             ELSE -gs.win_cnt
@@ -55,7 +56,7 @@ def _score_chunk(game_ids, acc):
                    SUM(pd.delta + COALESCE(ex.extra, 0)) AS score,
                    COUNT(*)                               AS played
             FROM pd
-            JOIN "user" u ON u.user_id = pd.user_id
+            JOIN "user" u ON u.id = pd.user_id   -- user.id = Django PK
             LEFT JOIN ex ON ex.player_id = pd.player_id
             GROUP BY pd.user_id, u.full_name
         """, [game_ids])
@@ -86,8 +87,8 @@ def calculate_stats(period, chat_id=None):
 
     start = _period_start(period)
 
-    # Tugagan o'yinlar (is_active=False)
-    sql = "SELECT id FROM game WHERE is_active = false"
+    # Tugagan o'yinlar: phase='end' YOKI is_active=false
+    sql = "SELECT id FROM game WHERE (phase = 'end' OR is_active = false)"
     params = []
     if start:
         sql += " AND created_at >= %s"
@@ -118,7 +119,11 @@ def landing(request):
     top_players = calculate_stats('month')[:30]
 
     month_start = _period_start('month')
-    total_games = Game.objects.filter(is_active=False, created_at__gte=month_start).count()
+    total_games = Game.objects.filter(
+        created_at__gte=month_start
+    ).filter(
+        djmodels.Q(phase='end') | djmodels.Q(is_active=False)
+    ).count()
 
     top_balances = (
         GroupBalance.objects
