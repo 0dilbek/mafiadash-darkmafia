@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bot',
+    'main',
 ]
 
 MIDDLEWARE = [
@@ -84,9 +85,25 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGIN_URL = '/panel/login/'
+LOGIN_REDIRECT_URL = '/panel/'
+LOGOUT_REDIRECT_URL = '/panel/login/'
+
+# Cache — Redis mavjud bo'lsa ishlatiladi, yo'q bo'lsa local memory
+_REDIS_URL = os.environ.get('REDIS_URL', '')
+if _REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _REDIS_URL,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
 CSRF_TRUSTED_ORIGINS = [
     'https://darknightmaf.uz',
     'https://www.darknightmaf.uz',
