@@ -5,8 +5,12 @@ from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 
+import json as _json
+
 from django.db import models as djmodels
-from bot.models import GroupBalance, Chat, Game
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from bot.models import GroupBalance, Chat, Game, Profile
 
 CHUNK_SIZE = 500
 CACHE_TTL  = 60 * 15  # 15 daqiqa
@@ -237,23 +241,47 @@ def landing(request):
     top_players = calculate_stats('month')[:30]
     period_label = 'Oylik'
 
-    # Agar bu oy ma'lumot bo'lmasa — barcha vaqt bo'yicha ko'rsat
     if not top_players:
         top_players = calculate_stats('all')[:30]
         period_label = "Barcha vaqt"
 
     month_start = _period_start('month')
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    finished_q  = djmodels.Q(phase='end') | djmodels.Q(is_active=False)
+
     total_games = Game.objects.filter(
         created_at__gte=month_start
-    ).filter(
-        djmodels.Q(phase='end') | djmodels.Q(is_active=False)
-    ).count()
-
-    # Agar bu oy o'yin bo'lmasa — jami hisoblash
+    ).filter(finished_q).count()
     if total_games == 0:
-        total_games = Game.objects.filter(
-            djmodels.Q(phase='end') | djmodels.Q(is_active=False)
-        ).count()
+        total_games = Game.objects.filter(finished_q).count()
+
+    # Badges: foydalanuvchilar (profile egalari) va guruhlar soni
+    total_users  = Profile.objects.count()
+    total_groups = Chat.objects.count()
+
+    # Kunlik chart: shu oy, bugunsiz (kechagigacha)
+    raw_daily = (
+        Game.objects
+        .filter(created_at__gte=month_start, created_at__lt=today_start)
+        .filter(finished_q)
+        .annotate(day=TruncDate('created_at'))
+        .values('day')
+        .annotate(cnt=Count('id'))
+        .order_by('day')
+    )
+    day_map = {}
+    d = month_start.date()
+    yesterday = (today_start - timedelta(days=1)).date()
+    while d <= yesterday:
+        day_map[d] = 0
+        d += timedelta(days=1)
+    for row in raw_daily:
+        if row['day'] in day_map:
+            day_map[row['day']] = row['cnt']
+
+    sorted_days = sorted(day_map)
+    chart_labels = _json.dumps([str(d.day) for d in sorted_days])
+    chart_data   = _json.dumps([day_map[d] for d in sorted_days])
 
     top_balances = (
         GroupBalance.objects
@@ -279,5 +307,9 @@ def landing(request):
         'top_players':   top_players,
         'top_groups':    top_groups,
         'total_games':   total_games,
+        'total_users':   total_users,
+        'total_groups':  total_groups,
         'period_label':  period_label,
+        'chart_labels':  chart_labels,
+        'chart_data':    chart_data,
     })

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dark Mafia — Top Reyting</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
 /* ─────────────────────────────────────────────────────
    DESIGN TOKENS
@@ -114,29 +115,67 @@ img,svg{display:block}
   animation:fadeUp .8s .35s ease both;
 }
 .hcard{
-  flex:0 0 auto;width:130px;
-  background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r2);
-  padding:20px 14px 16px;text-align:center;
+  flex:0 0 auto;width:140px;
+  background:linear-gradient(160deg,#0d0d1f 0%,#0a0a18 100%);
+  border:1px solid rgba(212,175,55,.28);
+  border-radius:var(--r2);
+  padding:22px 14px 18px;text-align:center;
   position:relative;overflow:hidden;
-  transition:transform .25s,box-shadow .25s;
+  box-shadow:0 0 28px rgba(212,175,55,.09),0 6px 20px rgba(0,0,0,.5),
+             inset 0 1px 0 rgba(255,255,255,.04);
+  transition:transform .25s,box-shadow .25s,border-color .25s;
   cursor:default;
 }
-.hcard:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(212,175,55,.1)}
-/* top line */
-.hcard::before{content:'';position:absolute;top:0;left:20%;right:20%;height:1px;
-  background:linear-gradient(90deg,transparent,var(--g0),transparent)}
-/* inner glow */
-.hcard::after{content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.06) 0%,transparent 60%)}
-.hc-icon{font-size:1.5rem;margin-bottom:8px;filter:drop-shadow(0 0 8px var(--glow))}
-.hc-val{
-  font-size:1.8rem;font-weight:900;line-height:1;
-  background:linear-gradient(135deg,var(--g1),var(--g0));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+.hcard:hover{
+  transform:translateY(-5px);
+  border-color:rgba(212,175,55,.5);
+  box-shadow:0 0 48px rgba(212,175,55,.18),0 12px 36px rgba(0,0,0,.6),
+             inset 0 1px 0 rgba(255,255,255,.06);
 }
-.hc-lbl{font-size:.65rem;color:var(--mut);text-transform:uppercase;
-  letter-spacing:.1em;margin-top:5px;font-weight:600}
-@media(min-width:500px){.hcard{width:150px}.hc-val{font-size:2rem}}
+/* glowing top bar */
+.hcard::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,var(--g3) 20%,var(--g1) 50%,var(--g3) 80%,transparent 100%);
+  box-shadow:0 0 12px rgba(212,175,55,.6),0 0 24px rgba(212,175,55,.3);
+}
+/* inner radial glow */
+.hcard::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% -10%,rgba(212,175,55,.1) 0%,transparent 55%);
+  pointer-events:none;
+}
+.hc-icon{
+  font-size:1.65rem;margin-bottom:10px;
+  filter:drop-shadow(0 0 10px rgba(212,175,55,.55)) drop-shadow(0 0 20px rgba(212,175,55,.25));
+}
+.hc-val{
+  font-size:2rem;font-weight:900;line-height:1;
+  background:linear-gradient(135deg,#fff5cc 0%,var(--g1) 40%,var(--g0) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 8px rgba(212,175,55,.35));
+}
+.hc-lbl{
+  font-size:.64rem;color:#8888aa;text-transform:uppercase;
+  letter-spacing:.13em;margin-top:6px;font-weight:700;
+}
+@media(min-width:500px){.hcard{width:160px}.hc-val{font-size:2.2rem}}
+
+/* ─── CHART SECTION ─── */
+.chart-section{margin-top:48px}
+.chart-wrap{
+  background:linear-gradient(160deg,#0d0d1f 0%,#0a0a18 100%);
+  border:1px solid rgba(212,175,55,.18);border-radius:var(--r2);
+  padding:24px 20px 16px;
+  box-shadow:0 0 28px rgba(212,175,55,.06),0 6px 20px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;
+}
+.chart-wrap::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--g3),var(--g1),var(--g3),transparent);
+  opacity:.6;
+}
+.chart-canvas-wrap{height:200px;position:relative}
+@media(min-width:640px){.chart-canvas-wrap{height:240px}}
 
 /* ─────────────────────────────────────────────────────
    DIVIDER
@@ -386,24 +425,6 @@ img,svg{display:block}
 .pg-row:nth-child(5){animation-delay:.33s}
 
 /* ─────────────────────────────────────────────────────
-   INFO CARD
-───────────────────────────────────────────────────── */
-.info-card{
-  background:var(--bg2);border:1px solid var(--brd);border-radius:var(--r2);
-  padding:24px 22px;position:relative;overflow:hidden;
-}
-.info-card::after{content:'🎭';position:absolute;right:12px;bottom:6px;
-  font-size:5rem;opacity:.05;transform:rotate(-10deg);pointer-events:none}
-.ic-title{
-  font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;
-  color:var(--g0);margin-bottom:10px;
-  display:flex;align-items:center;gap:6px;
-}
-.ic-title::before{content:'';width:16px;height:2px;
-  background:linear-gradient(90deg,var(--g0),transparent);border-radius:1px}
-.info-card p{font-size:.8rem;color:var(--mut);line-height:1.7}
-
-/* ─────────────────────────────────────────────────────
    EMPTY STATE
 ───────────────────────────────────────────────────── */
 .empty{text-align:center;padding:48px 20px;color:var(--mut)}
@@ -461,8 +482,8 @@ img,svg{display:block}
 
   <div class="hero-stats">
     <div class="hcard" style="animation-delay:.35s">
-      <div class="hc-icon">🎮</div>
-      <div class="hc-val" data-count="{{ top_players|length }}">0</div>
+      <div class="hc-icon">👤</div>
+      <div class="hc-val" data-count="{{ total_users }}">0</div>
       <div class="hc-lbl">O'yinchi</div>
     </div>
     <div class="hcard" style="animation-delay:.45s">
@@ -471,9 +492,9 @@ img,svg{display:block}
       <div class="hc-lbl">O'yin (oy)</div>
     </div>
     <div class="hcard" style="animation-delay:.55s">
-      <div class="hc-icon">💎</div>
-      <div class="hc-val" data-count="{{ top_groups|length }}">0</div>
-      <div class="hc-lbl">Premium guruh</div>
+      <div class="hc-icon">🏘️</div>
+      <div class="hc-val" data-count="{{ total_groups }}">0</div>
+      <div class="hc-lbl">Guruhlar</div>
     </div>
   </div>
 </div>
@@ -598,15 +619,25 @@ img,svg{display:block}
       {% endif %}
     </div>
 
-    <!-- Info -->
-    <div class="info-card" style="animation:fadeIn .8s .5s ease both">
-      <div class="ic-title"><i class="bi bi-info-circle"></i> Dark Mafia</div>
-      <p>Telegram'dagi eng katta mafia o'yini. Reyting har 15 daqiqada yangilanadi. Guruh adminlari panel orqali sozlamalarni boshqarishi mumkin.</p>
-    </div>
-
   </div><!-- /right -->
 
 </div><!-- /grid -->
+
+<!-- ────────── DAILY CHART ────────── -->
+<div class="chart-section">
+  <div class="sec">
+    <div class="sec-ico"><i class="bi bi-bar-chart-fill"></i></div>
+    <div class="sec-txt">
+      <div class="sec-title">Kunlik o'yinlar</div>
+      <div class="sec-sub">Shu oy — kechagigacha</div>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-canvas-wrap">
+      <canvas id="dailyChart"></canvas>
+    </div>
+  </div>
+</div>
 
 <div class="footer">
   <b>Dark Mafia</b> · Oylik reyting statistikasi
@@ -705,6 +736,72 @@ document.querySelectorAll('.pg-bal span[data-count]').forEach((el,i)=>
     const sc=parseInt(r.querySelector('.lb-score')?.dataset.count||0);
     const fill=r.querySelector('.lb-bar-fill');
     if(fill) setTimeout(()=>fill.style.width=Math.max(6,sc/maxSc*100)+'%',700);
+  });
+})();
+
+/* ══════════════════════════════════════
+   DAILY CHART
+══════════════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('dailyChart');
+  if(!canvas)return;
+  const labels={{ chart_labels|safe }};
+  const data={{ chart_data|safe }};
+  if(!labels.length)return;
+
+  const ctx=canvas.getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,220);
+  grad.addColorStop(0,'rgba(212,175,55,0.72)');
+  grad.addColorStop(0.6,'rgba(212,175,55,0.28)');
+  grad.addColorStop(1,'rgba(212,175,55,0.03)');
+
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        data,
+        backgroundColor:grad,
+        borderColor:'rgba(212,175,55,0.85)',
+        borderWidth:1,
+        borderRadius:5,
+        borderSkipped:false,
+        hoverBackgroundColor:'rgba(245,215,110,0.85)',
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      animation:{duration:900,easing:'easeOutQuart'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0f0f22',
+          borderColor:'rgba(212,175,55,0.35)',
+          borderWidth:1,
+          titleColor:'#f5d76e',
+          bodyColor:'#c8cadc',
+          padding:10,
+          callbacks:{
+            title:items=>`${items[0].label}-kun`,
+            label:item=>`${item.raw} ta o'yin`
+          }
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:'rgba(212,175,55,0.05)',drawBorder:false},
+          ticks:{color:'#55557a',font:{size:11}},
+          border:{color:'transparent'}
+        },
+        y:{
+          grid:{color:'rgba(212,175,55,0.06)',drawBorder:false},
+          ticks:{color:'#55557a',font:{size:11},stepSize:1,precision:0},
+          border:{color:'transparent'},
+          beginAtZero:true
+        }
+      }
+    }
   });
 })();
 </script>
