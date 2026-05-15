@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dark Mafia — Top Reyting</title>
+<title>Dark Night Mafia — Top Reyting</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
@@ -88,7 +88,7 @@ body{
 /* ═══════════════════════════════════════════
    LAYOUT
 ═══════════════════════════════════════════ */
-.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 16px 100px}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:0 16px 100px}
 @media(min-width:640px){.wrap{padding:0 28px 100px}}
 
 /* ═══════════════════════════════════════════
@@ -126,7 +126,7 @@ body{
   filter:drop-shadow(0 0 55px rgba(212,175,55,.2));
 }
 .hero-title::after{
-  content:'Dark Mafia';position:absolute;inset:0;
+  content:'Dark Night Mafia';position:absolute;inset:0;
   background:linear-gradient(108deg,transparent 28%,rgba(255,255,255,.24) 46%,transparent 64%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   animation:shimmerSweep 7s 2.5s ease-in-out infinite;
@@ -228,8 +228,7 @@ body{
 /* ═══════════════════════════════════════════
    MAIN GRID
 ═══════════════════════════════════════════ */
-.main-grid{display:grid;grid-template-columns:1fr;gap:36px}
-@media(min-width:800px){.main-grid{grid-template-columns:1fr 360px;align-items:start}}
+.main-grid{display:flex;flex-direction:column;gap:36px}
 
 /* ═══════════════════════════════════════════
    PODIUM
@@ -500,7 +499,7 @@ body{
     <span class="live-dot"></span>
     {{ period_label }} reyting
   </div>
-  <div class="hero-title">Dark Mafia</div>
+  <div class="hero-title">Dark Night Mafia</div>
   <p class="hero-sub">Telegram'dagi eng katta mafia o'yini — real vaqt statistikasi</p>
 
   <div class="hero-stats">
@@ -656,7 +655,7 @@ body{
 </div>
 
 <div class="footer">
-  <b>Dark Mafia</b> · Reyting har 15 daqiqada yangilanadi
+  <b>Dark Night Mafia</b> · Reyting har 15 daqiqada yangilanadi
 </div>
 
 </div><!-- /wrap -->
