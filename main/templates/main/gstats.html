@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>O'yin #{{ game.id }} — Dark Night Mafia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css">
+<style>
+:root{
+  --bg:      #05050f;
+  --g0:      #d4af37;
+  --g1:      #f0d060;
+  --g2:      #b8860b;
+  --gp:      #ffe57a;
+  --glass:   rgba(255,255,255,.045);
+  --border:  rgba(255,255,255,.08);
+  /* team colors */
+  --mafia:   #e05252;
+  --mafia-bg:rgba(224,82,82,.12);
+  --city:    #5b9bd5;
+  --city-bg: rgba(91,155,213,.12);
+  --neutral: #a78bfa;
+  --neut-bg: rgba(167,139,250,.12);
+  /* result */
+  --win-clr: #5ee879;
+  --win-bg:  rgba(94,232,121,.1);
+  --lose-clr:#e05252;
+  --lose-bg: rgba(224,82,82,.08);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{background:var(--bg);font-family:'Inter',sans-serif;color:#e8e8f0;min-height:100vh;overflow-x:hidden}
+
+canvas#stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ═══ NAVBAR ════════════════════════════════════════ */
+.navbar{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:52px;
+  display:flex;align-items:center;gap:14px;padding:0 20px;
+  background:rgba(5,5,16,.88);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(212,175,55,.12);
+}
+.nav-back{
+  display:inline-flex;align-items:center;gap:6px;
+  color:rgba(255,255,255,.5);font-size:.82rem;
+  text-decoration:none;transition:color .2s;flex-shrink:0;
+}
+.nav-back:hover{color:var(--g1)}
+.nav-logo{
+  font-size:.88rem;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(90deg,var(--g1),var(--g0));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.nav-gid{
+  margin-left:auto;font-size:.75rem;
+  color:rgba(255,255,255,.28);letter-spacing:.02em;
+}
+
+/* ═══ WRAP ══════════════════════════════════════════ */
+.wrap{max-width:700px;margin:0 auto;padding:72px 16px 72px;position:relative;z-index:1}
+
+/* ═══ NOT FINISHED ══════════════════════════════════ */
+.not-finished{
+  min-height:calc(100vh - 52px);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;text-align:center;
+}
+.nf-icon{font-size:4rem;color:var(--g0);animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.5;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
+.nf-title{font-size:1.6rem;font-weight:800;color:#fff}
+.nf-sub{font-size:.93rem;color:rgba(255,255,255,.42);max-width:320px}
+
+/* ═══ RESULT BANNER ═════════════════════════════════ */
+.result-banner{
+  border-radius:20px;padding:32px 24px 28px;text-align:center;
+  margin-bottom:28px;position:relative;overflow:hidden;
+  animation:enterUp .7s .05s cubic-bezier(.22,1,.36,1) both;
+}
+.result-banner.mafia{
+  background:linear-gradient(135deg,rgba(224,82,82,.15) 0%,rgba(180,40,40,.08) 100%);
+  border:1px solid rgba(224,82,82,.28);
+  box-shadow:0 0 60px rgba(224,82,82,.12) inset, 0 8px 40px rgba(224,82,82,.08);
+}
+.result-banner.city{
+  background:linear-gradient(135deg,rgba(91,155,213,.15) 0%,rgba(50,100,180,.08) 100%);
+  border:1px solid rgba(91,155,213,.28);
+  box-shadow:0 0 60px rgba(91,155,213,.12) inset, 0 8px 40px rgba(91,155,213,.08);
+}
+.result-banner.neutral{
+  background:linear-gradient(135deg,rgba(167,139,250,.15) 0%,rgba(120,90,200,.08) 100%);
+  border:1px solid rgba(167,139,250,.28);
+  box-shadow:0 0 60px rgba(167,139,250,.12) inset, 0 8px 40px rgba(167,139,250,.08);
+}
+.rb-crown{font-size:2.4rem;margin-bottom:10px;display:block;animation:float 3.5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.rb-label{
+  font-size:.72rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;opacity:.55;margin-bottom:8px;
+}
+.rb-title{
+  font-size:clamp(1.6rem,5vw,2.4rem);font-weight:900;
+  line-height:1.1;letter-spacing:.01em;
+}
+.rb-title.mafia  {color:var(--mafia)}
+.rb-title.city   {color:var(--city)}
+.rb-title.neutral{color:var(--neutral)}
+.rb-meta{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  margin-top:18px;
+}
+.rb-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  border-radius:30px;padding:5px 13px;font-size:.8rem;color:rgba(255,255,255,.6);
+}
+.rb-chip i{font-size:.9rem;opacity:.8}
+
+/* ═══ BATTLE STATS ══════════════════════════════════ */
+.section-lbl{
+  font-size:.7rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-bottom:12px;
+}
+.battle-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+  margin-bottom:28px;
+  animation:enterUp .7s .15s cubic-bezier(.22,1,.36,1) both;
+}
+.bcard{
+  background:var(--glass);border:1px solid var(--border);
+  border-radius:14px;padding:16px 10px;text-align:center;
+  transition:transform .2s,box-shadow .2s;
+}
+.bcard:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.35)}
+.bc-icon{font-size:1.3rem;margin-bottom:6px}
+.bc-val{font-size:1.55rem;font-weight:900;line-height:1;margin-bottom:3px}
+.bc-lbl{font-size:.65rem;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.06em}
+
+.bcard.players .bc-icon{color:var(--g1)}        .bcard.players .bc-val{color:#fff}
+.bcard.winners .bc-icon{color:var(--win-clr)}   .bcard.winners .bc-val{color:var(--win-clr)}
+.bcard.duration .bc-icon{color:var(--g0)}       .bcard.duration .bc-val{color:var(--g1)}
+.bcard.kills  .bc-icon{color:var(--mafia)}      .bcard.kills  .bc-val{color:var(--mafia)}
+.bcard.found  .bc-icon{color:var(--city)}       .bcard.found  .bc-val{color:var(--city)}
+.bcard.saves  .bc-icon{color:#5ee879}           .bcard.saves  .bc-val{color:#5ee879}
+
+/* ═══ DIVIDER ═══════════════════════════════════════ */
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,.14),transparent);margin:4px 0 24px}
+
+/* ═══ PLAYER LIST ════════════════════════════════════ */
+.list-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.list-count{
+  font-size:.72rem;background:var(--glass);border:1px solid var(--border);
+  border-radius:20px;padding:3px 10px;color:rgba(255,255,255,.4);
+}
+
+.player-list{display:flex;flex-direction:column;gap:7px;margin-bottom:28px}
+
+.prow{
+  display:grid;
+  grid-template-columns:28px 38px 1fr auto;
+  align-items:center;gap:10px;
+  background:var(--glass);border:1px solid var(--border);
+  border-radius:13px;padding:11px 14px;
+  opacity:0;transform:translateX(-16px);
+  transition:opacity .38s,transform .38s,box-shadow .22s;
+}
+.prow.vis{opacity:1;transform:translateX(0)}
+.prow:hover{box-shadow:0 6px 22px rgba(0,0,0,.32)}
+
+/* winner / loser border accent */
+.prow.win-row {border-color:rgba(94,232,121,.16);background:rgba(94,232,121,.03)}
+.prow.lose-row{border-color:rgba(224,82,82,.10)}
+
+/* rank */
+.prank{
+  font-size:.78rem;font-weight:800;text-align:center;
+  color:rgba(255,255,255,.28);flex-shrink:0;
+}
+.prank.gold  {color:var(--g0);font-size:.92rem}
+.prank.silver{color:var(--sl,#c0c0c0)}
+.prank.bronze{color:#cd7f32}
+
+/* role icon bubble */
+.prole-icon{
+  width:38px;height:38px;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;flex-shrink:0;
+}
+.prole-icon.mafia  {background:var(--mafia-bg);color:var(--mafia)}
+.prole-icon.city   {background:var(--city-bg);color:var(--city)}
+.prole-icon.neutral{background:var(--neut-bg);color:var(--neutral)}
+
+/* info */
+.pinfo{min-width:0}
+.pname{
+  font-size:.9rem;font-weight:700;color:#e8e8f0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:3px;
+}
+.pmeta{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
+.role-badge{
+  font-size:.65rem;font-weight:600;letter-spacing:.04em;
+  padding:2px 7px;border-radius:10px;
+}
+.role-badge.mafia  {background:var(--mafia-bg);color:var(--mafia)}
+.role-badge.city   {background:var(--city-bg);color:var(--city)}
+.role-badge.neutral{background:var(--neut-bg);color:var(--neutral)}
+
+.stat-pill{
+  display:inline-flex;align-items:center;gap:3px;
+  font-size:.65rem;color:rgba(255,255,255,.38);
+}
+.stat-pill i{font-size:.7rem}
+.stat-pill.kills{color:var(--mafia)}
+.stat-pill.finds{color:var(--city)}
+
+/* score + badge */
+.pright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.pscore{
+  font-size:.95rem;font-weight:900;
+}
+.pscore.pos{color:var(--g1)}
+.pscore.neg{color:rgba(255,255,255,.28)}
+.pscore.na {color:rgba(255,255,255,.18);font-size:.75rem}
+.result-tag{
+  font-size:.6rem;font-weight:800;letter-spacing:.07em;
+  padding:2px 7px;border-radius:10px;text-transform:uppercase;
+}
+.result-tag.win {background:var(--win-bg);color:var(--win-clr)}
+.result-tag.lose{background:var(--lose-bg);color:var(--lose-clr)}
+
+/* ═══ NO DATA NOTICE ════════════════════════════════ */
+.no-data{
+  text-align:center;padding:28px 0;
+  color:rgba(255,255,255,.25);font-size:.85rem;
+}
+
+/* ═══ ANIMATIONS ════════════════════════════════════ */
+@keyframes enterUp{
+  from{opacity:0;transform:translateY(24px)}
+  to  {opacity:1;transform:translateY(0)}
+}
+
+/* ═══ RESPONSIVE ════════════════════════════════════ */
+@media(max-width:480px){
+  .battle-grid{grid-template-columns:repeat(3,1fr);gap:7px}
+  .bc-val{font-size:1.3rem}
+  .bc-lbl{font-size:.58rem}
+  .prow{grid-template-columns:22px 34px 1fr auto;gap:7px;padding:10px 11px}
+  .prole-icon{width:34px;height:34px;font-size:1rem}
+  .pname{font-size:.84rem}
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="/" class="nav-back"><i class="bi bi-arrow-left"></i> Bosh sahifa</a>
+  <span class="nav-logo">Dark Night Mafia</span>
+  <span class="nav-gid">#{{ game.id }}</span>
+</nav>
+
+<div class="wrap">
+
+{% if not finished %}
+<!-- ── O'YIN DAVOM ETYAPTI ─────────────────────── -->
+<div class="not-finished">
+  <i class="bi bi-hourglass-split nf-icon"></i>
+  <div class="nf-title">O'yin davom etyapti</div>
+  <div class="nf-sub">O'yin #{{ game.id }} hali tugamagan. Statistika o'yin tugashi bilan ko'rinadi.</div>
+</div>
+
+{% else %}
+<!-- ── RESULT BANNER ───────────────────────────── -->
+<div class="result-banner {{ winning_team }}">
+  {% if winning_team == 'mafia' %}
+    <span class="rb-crown"><i class="bi bi-suit-spade-fill" style="color:var(--mafia)"></i></span>
+    <div class="rb-label">O'yin yakunlandi</div>
+    <div class="rb-title mafia">Mafia G'alaba Qildi</div>
+  {% elif winning_team == 'neutral' %}
+    <span class="rb-crown"><i class="bi bi-radioactive" style="color:var(--neutral)"></i></span>
+    <div class="rb-label">O'yin yakunlandi</div>
+    <div class="rb-title neutral">Neytral G'alaba Qildi</div>
+  {% else %}
+    <span class="rb-crown"><i class="bi bi-shield-fill-check" style="color:var(--city)"></i></span>
+    <div class="rb-label">O'yin yakunlandi</div>
+    <div class="rb-title city">Shahar G'alaba Qildi</div>
+  {% endif %}
+  <div class="rb-meta">
+    <span class="rb-chip"><i class="bi bi-people-fill"></i> {{ chat_title }}</span>
+    <span class="rb-chip"><i class="bi bi-calendar3"></i> {{ played_at|date:"d.m.Y" }}</span>
+    <span class="rb-chip"><i class="bi bi-clock"></i> {{ played_at|date:"H:i" }}</span>
+    {% if end_stats %}<span class="rb-chip"><i class="bi bi-stopwatch"></i> {{ end_stats.duration_minutes }} daqiqa</span>{% endif %}
+  </div>
+</div>
+
+<!-- ── BATTLE STATS ────────────────────────────── -->
+{% if end_stats %}
+<div class="section-lbl">O'yin statistikasi</div>
+<div class="battle-grid">
+  <div class="bcard players">
+    <div class="bc-icon"><i class="bi bi-person-lines-fill"></i></div>
+    <div class="bc-val">{{ end_stats.total_players }}</div>
+    <div class="bc-lbl">O'yinchi</div>
+  </div>
+  <div class="bcard winners">
+    <div class="bc-icon"><i class="bi bi-trophy-fill"></i></div>
+    <div class="bc-val">{{ end_stats.winners_count }}</div>
+    <div class="bc-lbl">G'olib</div>
+  </div>
+  <div class="bcard duration">
+    <div class="bc-icon"><i class="bi bi-stopwatch-fill"></i></div>
+    <div class="bc-val">{{ end_stats.duration_minutes }}<span style="font-size:.7rem;font-weight:600;opacity:.6">m</span></div>
+    <div class="bc-lbl">Davomiylik</div>
+  </div>
+  <div class="bcard kills">
+    <div class="bc-icon"><i class="bi bi-moon-stars-fill"></i></div>
+    <div class="bc-val">{{ end_stats.mafia_kills }}</div>
+    <div class="bc-lbl">Mafia qirdi</div>
+  </div>
+  <div class="bcard found">
+    <div class="bc-icon"><i class="bi bi-search"></i></div>
+    <div class="bc-val">{{ end_stats.kom_found }}</div>
+    <div class="bc-lbl">Komissar topdi</div>
+  </div>
+  <div class="bcard saves">
+    <div class="bc-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+    <div class="bc-val">{{ end_stats.doctor_saves }}</div>
+    <div class="bc-lbl">Doktor qutqardi</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="divider"></div>
+
+<!-- ── G'OLIBLAR ──────────────────────────────── -->
+{% if winners %}
+<div class="list-header">
+  <div class="section-lbl" style="margin-bottom:0"><i class="bi bi-trophy-fill" style="color:var(--g0);margin-right:5px"></i>G'oliblar</div>
+  <div class="list-count">{{ winners|length }} nafar</div>
+</div>
+<div class="player-list" id="winners-list">
+  {% for p in winners %}
+  <div class="prow win-row">
+    <div class="prank {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+      {% if forloop.counter == 1 %}<i class="bi bi-trophy-fill"></i>
+      {% elif forloop.counter == 2 %}<i class="bi bi-award-fill"></i>
+      {% elif forloop.counter == 3 %}<i class="bi bi-award-fill"></i>
+      {% else %}{{ forloop.counter }}{% endif %}
+    </div>
+    <div class="prole-icon {{ p.team }}"><i class="bi {{ p.icon }}"></i></div>
+    <div class="pinfo">
+      <div class="pname">{{ p.name }}</div>
+      <div class="pmeta">
+        <span class="role-badge {{ p.team }}">{{ p.role }}</span>
+        {% if p.kills %}<span class="stat-pill kills"><i class="bi bi-moon-stars-fill"></i>{{ p.kills }}</span>{% endif %}
+        {% if p.kom_finds %}<span class="stat-pill finds"><i class="bi bi-search"></i>{{ p.kom_finds }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="pright">
+      {% if p.score is not None %}
+        <div class="pscore {% if p.score >= 0 %}pos{% else %}neg{% endif %}">{% if p.score > 0 %}+{% endif %}{{ p.score }}</div>
+      {% else %}
+        <div class="pscore na">— ball</div>
+      {% endif %}
+      <span class="result-tag win">G'OLIB</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ── MAG'LUBLAR ─────────────────────────────── -->
+{% if losers %}
+<div class="list-header">
+  <div class="section-lbl" style="margin-bottom:0"><i class="bi bi-x-circle-fill" style="color:var(--lose-clr);margin-right:5px"></i>Mag'lublar</div>
+  <div class="list-count">{{ losers|length }} nafar</div>
+</div>
+<div class="player-list" id="losers-list">
+  {% for p in losers %}
+  <div class="prow lose-row">
+    <div class="prank">{{ forloop.counter }}</div>
+    <div class="prole-icon {{ p.team }}"><i class="bi {{ p.icon }}"></i></div>
+    <div class="pinfo">
+      <div class="pname">{{ p.name }}</div>
+      <div class="pmeta">
+        <span class="role-badge {{ p.team }}">{{ p.role }}</span>
+        {% if p.kills %}<span class="stat-pill kills"><i class="bi bi-moon-stars-fill"></i>{{ p.kills }}</span>{% endif %}
+        {% if p.kom_finds %}<span class="stat-pill finds"><i class="bi bi-search"></i>{{ p.kom_finds }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="pright">
+      {% if p.score is not None %}
+        <div class="pscore neg">{{ p.score }}</div>
+      {% else %}
+        <div class="pscore na">— ball</div>
+      {% endif %}
+      <span class="result-tag lose">MAG'LUB</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not winners and not losers %}
+<div class="no-data"><i class="bi bi-clock-history" style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4"></i>Ma'lumotlar hali yuklanmagan</div>
+{% endif %}
+
+{% endif %}
+</div><!-- /wrap -->
+
+<script>
+/* ─ STARS ──────────────────────────────────────── */
+(function(){
+  const cvs=document.getElementById('stars');
+  const ctx=cvs.getContext('2d');
+  let W,H,stars=[];
+  const COLS=[[255,255,255],[255,255,255],[255,255,255],[212,228,255],[255,248,210]];
+  function resize(){W=cvs.width=window.innerWidth;H=cvs.height=window.innerHeight}
+  function init(){
+    const n=Math.min(Math.round(W*H/5000),180);
+    stars=[];
+    for(let i=0;i<n;i++){
+      const c=COLS[Math.floor(Math.random()*COLS.length)];
+      stars.push({x:Math.random(),y:Math.pow(Math.random(),2)*.9,
+        r:Math.random()*1.3+.4,base:Math.random()*.6+.2,
+        ph:Math.random()*Math.PI*2,fr:(Math.random()*.3+.1)*.001,c});
+    }
+  }
+  function draw(t){
+    ctx.clearRect(0,0,W,H);
+    for(const s of stars){
+      const o=s.base*(.5+.5*Math.sin(t*s.fr+s.ph));
+      const x=s.x*W,y=s.y*H;const[r,g,b]=s.c;
+      ctx.beginPath();ctx.arc(x,y,s.r*5,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${(o*.09).toFixed(3)})`;ctx.fill();
+      ctx.beginPath();ctx.arc(x,y,s.r*2.2,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${(o*.27).toFixed(3)})`;ctx.fill();
+      ctx.beginPath();ctx.arc(x,y,s.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},${o.toFixed(3)})`;ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize',()=>{resize();init()});
+  resize();init();requestAnimationFrame(draw);
+})();
+
+/* ─ SCROLL REVEAL ──────────────────────────────── */
+(function(){
+  const rows=document.querySelectorAll('.prow');
+  if(!rows.length)return;
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){
+        setTimeout(()=>e.target.classList.add('vis'),i*48);
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:.08});
+  rows.forEach(r=>io.observe(r));
+})();
+</script>
+</body>
+</html>

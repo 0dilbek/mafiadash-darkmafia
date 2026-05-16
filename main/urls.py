@@ -17,6 +17,9 @@ urlpatterns = [
     path('api/group-chart/',   bot_views.group_chart_data,   name='group_chart_data'),
     path('api/generate-link/', bot_views.generate_panel_link, name='generate_panel_link'),
 
+    # O'yin statistikasi
+    path('gstats/<int:game_id>/', views.game_stats, name='game_stats'),
+
     # Debug (vaqtinchalik)
     path('api/debug-stats/', views.debug_stats, name='debug_stats'),
 ]

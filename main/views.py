@@ -1,7 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
 from django.core.cache import cache
 from django.db import connection
-from django.http import JsonResponse
 from django.utils import timezone
 from datetime import timedelta
 
@@ -10,7 +10,7 @@ import json as _json
 from django.db import models as djmodels
 from django.db.models import Count
 from django.db.models.functions import TruncDate
-from bot.models import GroupBalance, Chat, Game, Profile
+from bot.models import GroupBalance, Chat, Game, Profile, GamePlayer, UserGameScore, GameEndStats, PlayerActionStat
 
 CHUNK_SIZE = 500
 CACHE_TTL  = 60 * 15  # 15 daqiqa
@@ -312,4 +312,154 @@ def landing(request):
         'period_label':  period_label,
         'chart_labels':  chart_labels,
         'chart_data':    chart_data,
+    })
+
+
+# ── Role metadata ───────────────────────────────────────────────────────────────
+_ROLE_META = {
+    # Mafia jamosi
+    'DON':         {'icon': 'bi-suit-spade-fill',    'team': 'mafia',  'label': 'Don'},
+    'MAFIA':       {'icon': 'bi-person-fill-slash',  'team': 'mafia',  'label': 'Mafia'},
+    'SNAYPER':     {'icon': 'bi-crosshair',           'team': 'mafia',  'label': 'Snayper'},
+    'BOMBARDIER':  {'icon': 'bi-fire',                'team': 'mafia',  'label': 'Bombardir'},
+    'DIPLOMAT':    {'icon': 'bi-briefcase-fill',      'team': 'mafia',  'label': 'Diplomat'},
+    'PROVOKATOR':  {'icon': 'bi-lightning-fill',      'team': 'mafia',  'label': 'Provokator'},
+    'GAZABDOR':    {'icon': 'bi-exclamation-triangle-fill', 'team': 'mafia', 'label': 'Gazabdor'},
+    'MANIPULATOR': {'icon': 'bi-shuffle',             'team': 'mafia',  'label': 'Manipulator'},
+    # Shahar jamosi
+    'KOMISSAR':    {'icon': 'bi-shield-fill-check',  'team': 'city',   'label': 'Komissar'},
+    'DOKTOR':      {'icon': 'bi-heart-pulse-fill',   'team': 'city',   'label': 'Doktor'},
+    'DETEKTIV':    {'icon': 'bi-search',             'team': 'city',   'label': 'Detektiv'},
+    'ADVOKAT':     {'icon': 'bi-journal-text',       'team': 'city',   'label': 'Advokat'},
+    'JURNALIST':   {'icon': 'bi-newspaper',          'team': 'city',   'label': 'Jurnalist'},
+    'SNAYPER_S':   {'icon': 'bi-crosshair2',          'team': 'city',   'label': 'Snayper (Shahar)'},
+    'FUQARO':      {'icon': 'bi-person-fill',        'team': 'city',   'label': 'Fuqaro'},
+    'CITIZEN':     {'icon': 'bi-person-fill',        'team': 'city',   'label': 'Fuqaro'},
+    # Neytral
+    'MANIAC':      {'icon': 'bi-radioactive',        'team': 'neutral', 'label': 'Maniac'},
+    'JOKER':       {'icon': 'bi-emoji-laughing-fill', 'team': 'neutral', 'label': 'Joker'},
+}
+
+def _role_meta(role_raw):
+    key = (role_raw or '').upper().strip()
+    return _ROLE_META.get(key, {
+        'icon': 'bi-person-fill',
+        'team': 'city',
+        'label': role_raw or 'Noma\'lum',
+    })
+
+
+def game_stats(request, game_id):
+    game = get_object_or_404(Game, pk=game_id)
+
+    finished = (game.phase == 'end') or (not game.is_active)
+    if not finished:
+        return render(request, 'main/gstats.html', {'game': game, 'finished': False})
+
+    # ── Chat title ───────────────────────────────────────────────────────────────
+    try:
+        chat_title = Chat.objects.get(chat_id=game.chat_id).title
+    except Chat.DoesNotExist:
+        chat_title = f'Guruh #{game.chat_id}'
+
+    # ── GameEndStats ─────────────────────────────────────────────────────────────
+    try:
+        end_stats = GameEndStats.objects.get(game=game)
+    except GameEndStats.DoesNotExist:
+        end_stats = None
+
+    # ── PlayerActionStat  (role, kills, kom_finds per player) ────────────────────
+    action_map = {}
+    try:
+        for a in PlayerActionStat.objects.filter(game=game).select_related('user'):
+            action_map[a.user_id] = a
+    except Exception:
+        pass
+
+    # ── UserGameScore  (score, is_win per player) ────────────────────────────────
+    score_rows = []
+    try:
+        score_rows = list(
+            UserGameScore.objects.filter(game=game)
+            .select_related('user')
+            .order_by('-score')
+        )
+    except Exception:
+        pass
+
+    # ── Build unified player list ─────────────────────────────────────────────────
+    players = []
+    seen_ids = set()
+
+    for s in score_rows:
+        uid = s.user_id
+        seen_ids.add(uid)
+        astat  = action_map.get(uid)
+        role_raw = astat.role if astat else ''
+        meta = _role_meta(role_raw)
+        players.append({
+            'name':      s.user.full_name or f'User #{s.user.user_id}',
+            'role':      meta['label'],
+            'icon':      meta['icon'],
+            'team':      meta['team'],
+            'score':     s.score,
+            'is_win':    s.is_win,
+            'kills':     astat.kills     if astat else 0,
+            'kom_finds': astat.kom_finds if astat else 0,
+        })
+
+    # Fallback: players in action_map but not in score_rows
+    for uid, astat in action_map.items():
+        if uid in seen_ids:
+            continue
+        meta = _role_meta(astat.role)
+        players.append({
+            'name':      astat.user.full_name or f'User #{astat.user.user_id}',
+            'role':      meta['label'],
+            'icon':      meta['icon'],
+            'team':      meta['team'],
+            'score':     None,
+            'is_win':    astat.is_win,
+            'kills':     astat.kills,
+            'kom_finds': astat.kom_finds,
+        })
+
+    # If neither table has data — fall back to GamePlayer
+    if not players:
+        for gp in GamePlayer.objects.filter(game=game).select_related('user').order_by('-win'):
+            meta = _role_meta(gp.role)
+            players.append({
+                'name':      gp.user.full_name or f'User #{gp.user.user_id}',
+                'role':      meta['label'],
+                'icon':      meta['icon'],
+                'team':      meta['team'],
+                'score':     None,
+                'is_win':    gp.win,
+                'kills':     0,
+                'kom_finds': 0,
+            })
+
+    winners = [p for p in players if p['is_win']]
+    losers  = [p for p in players if not p['is_win']]
+
+    # ── Winning team ──────────────────────────────────────────────────────────────
+    team_tally = {}
+    for p in winners:
+        team_tally[p['team']] = team_tally.get(p['team'], 0) + 1
+    winning_team = max(team_tally, key=team_tally.get) if team_tally else 'city'
+
+    played_at = end_stats.played_at if end_stats else game.created_at
+
+    return render(request, 'main/gstats.html', {
+        'game':         game,
+        'finished':     True,
+        'chat_title':   chat_title,
+        'played_at':    played_at,
+        'end_stats':    end_stats,
+        'winners':      winners,
+        'losers':       losers,
+        'winning_team': winning_team,
+        'team_tally':   team_tally,
+        'has_scores':   bool(score_rows),
+        'has_actions':  bool(action_map),
     })

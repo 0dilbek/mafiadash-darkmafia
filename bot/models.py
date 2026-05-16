@@ -695,6 +695,55 @@ class GeroyMarket(models.Model):
         managed = False
 
 
+class UserGameScore(models.Model):
+    """Har bir o'yinchi uchun yakuniy ball."""
+    user      = models.ForeignKey(User, related_name="game_scores", on_delete=models.CASCADE)
+    game      = models.ForeignKey(Game, related_name="scores", on_delete=models.CASCADE)
+    chat_id   = models.BigIntegerField()
+    score     = models.IntegerField(default=0)
+    is_win    = models.BooleanField(default=False)
+    played_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "user_game_score"
+        managed = False
+        unique_together = (("user", "game"),)
+
+
+class GameEndStats(models.Model):
+    """O'yin tugaganda umumiy statistika."""
+    game             = models.OneToOneField(Game, related_name="end_stats", on_delete=models.CASCADE)
+    chat_id          = models.BigIntegerField()
+    total_players    = models.IntegerField(default=0)
+    winners_count    = models.IntegerField(default=0)
+    duration_minutes = models.IntegerField(default=0)
+    mafia_kills      = models.IntegerField(default=0)
+    kom_found        = models.IntegerField(default=0)
+    doctor_saves     = models.IntegerField(default=0)
+    played_at        = models.DateTimeField()
+
+    class Meta:
+        db_table = "game_end_stats"
+        managed = False
+
+
+class PlayerActionStat(models.Model):
+    """O'yin ichida har bir o'yinchining action statistikasi."""
+    game      = models.ForeignKey(Game, related_name="player_action_stats", on_delete=models.CASCADE)
+    user      = models.ForeignKey(User, related_name="action_stats", on_delete=models.CASCADE)
+    chat_id   = models.BigIntegerField()
+    role      = models.CharField(max_length=70)
+    is_win    = models.BooleanField(default=False)
+    kills     = models.IntegerField(default=0)
+    kom_finds = models.IntegerField(default=0)
+    played_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "player_action_stat"
+        managed = False
+        unique_together = (("game", "user"),)
+
+
 class ChatRoleOrder(models.Model):
     """Guruh uchun rol tartibini saqlaydi — botdagi default tartibni o'zgartirish imkoni."""
     chat_id = models.BigIntegerField(unique=True)
