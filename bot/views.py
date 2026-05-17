@@ -75,7 +75,7 @@ ROLE_TEAMS = {
 DEFAULT_ROLE_ORDER = [
     'DON',      'KOMISSAR',  'DOKTOR',    'FUQARO',
     'FUQARO',   'DAYDI',     'MAFIA',     'KEZUVCHI',
-    'BORI',     'AFSUNGAR',  'FUQARO',    'SUIDSID',
+    'BORI',     'AFSUNGAR',  'KOLDUN',    'SUIDSID',
     'ADVOKAT',  'QOTIL',     'FUQARO',    'JANOB',
     'JURNALIST','AFERIST',   'FUQARO',    'SEHRGAR',
     'AFSUNGAR', 'SERJANT',   'MAFIA',     'GAZABDOR',
