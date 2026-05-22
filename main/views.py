@@ -289,16 +289,17 @@ def landing(request):
         .order_by('-balance')[:5]
     )
     chat_map = {
-        c.chat_id: c.title
+        c.chat_id: c
         for c in Chat.objects.filter(
             chat_id__in=[g.chat_id for g in top_balances]
         )
     }
     top_groups = [
         {
-            'title':   chat_map.get(g.chat_id, f'Guruh #{g.chat_id}'),
-            'balance': g.balance,
-            'chat_id': g.chat_id,
+            'title':       (chat_map[g.chat_id].title if g.chat_id in chat_map else f'Guruh #{g.chat_id}'),
+            'balance':     g.balance,
+            'chat_id':     g.chat_id,
+            'invite_link': (chat_map[g.chat_id].invite_link if g.chat_id in chat_map else ''),
         }
         for g in top_balances
     ]

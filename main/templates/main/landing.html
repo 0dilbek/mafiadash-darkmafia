@@ -584,7 +584,7 @@ body{
     {% if top_groups %}
     <div class="pg-card" id="pgcard">
       {% for g in top_groups %}
-      <a href="{% url 'group_dashboard' %}?chat_id={{ g.chat_id }}" class="pg-row">
+      <a href="{{ g.invite_link|default:'#' }}" target="_blank" rel="noopener" class="pg-row">
         <div class="pg-rk">{{ forloop.counter }}</div>
         <div class="pg-ico"><i class="bi bi-people-fill"></i></div>
         <div class="pg-info">
