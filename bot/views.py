@@ -73,18 +73,14 @@ ROLE_TEAMS = {
 }
 
 DEFAULT_ROLE_ORDER = [
-    'DON',      'KOMISSAR',  'DOKTOR',    'FUQARO',
-    'FUQARO',   'DAYDI',     'MAFIA',     'KEZUVCHI',
-    'BORI',     'AFSUNGAR',  'KOLDUN',    'SUIDSID',
-    'ADVOKAT',  'QOTIL',     'FUQARO',    'JANOB',
-    'JURNALIST','AFERIST',   'FUQARO',    'SEHRGAR',
-    'AFSUNGAR', 'SERJANT',   'MAFIA',     'GAZABDOR',
-    'OVCHI',    'BORI',      'FUQARO',    'MINIOR',
-    'AFSUNGAR', 'JOKER',     'FUQARO',    'VAMPIR',
-    'MAFIA',    'SERJANT',   'FUQARO',    'KIMYOGAR',
-    'AFSUNGAR', 'BORI',      'MAFIA',     'SERJANT',
-    'FUQARO',   'VAMPIR',    'MAFIA',     'FUQARO',
-    'FUQARO',
+    'DON',       'KOMISSAR',  'DOKTOR',    'FUQARO',
+    'FUQARO',    'DAYDI',     'MAFIA',     'KEZUVCHI',
+    'BORI',      'AFSUNGAR',  'KOLDUN',    'SUIDSID',
+    'ADVOKAT',   'QOTIL',     'VAMPIR',    'JANOB',
+    'JURNALIST', 'AFERIST',   'FUQARO',    'SEHRGAR',
+    'AFSUNGAR',  'SERJANT',   'MAFIA',     'GAZABDOR',
+    'OVCHI',     'BORI',      'MINIOR',    'KIMYOGAR',
+    'AFSUNGAR',  'JOKER',
 ]
 
 
