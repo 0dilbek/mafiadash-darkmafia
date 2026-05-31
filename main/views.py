@@ -317,37 +317,85 @@ def landing(request):
 
 
 # ── Role metadata ───────────────────────────────────────────────────────────────
+# Kalitlar: ham oddiy ('DON'), ham DB dagi emoji string ('🤵🏻 Don')
 _ROLE_META = {
-    # Mafia jamosi
-    'DON':         {'icon': 'bi-suit-spade-fill',    'team': 'mafia',  'label': 'Don'},
-    'MAFIA':       {'icon': 'bi-person-fill-slash',  'team': 'mafia',  'label': 'Mafia'},
-    'SNAYPER':     {'icon': 'bi-crosshair',           'team': 'mafia',  'label': 'Snayper'},
-    'BOMBARDIER':  {'icon': 'bi-fire',                'team': 'mafia',  'label': 'Bombardir'},
-    'DIPLOMAT':    {'icon': 'bi-briefcase-fill',      'team': 'mafia',  'label': 'Diplomat'},
-    'PROVOKATOR':  {'icon': 'bi-lightning-fill',      'team': 'mafia',  'label': 'Provokator'},
-    'GAZABDOR':    {'icon': 'bi-exclamation-triangle-fill', 'team': 'mafia', 'label': 'Gazabdor'},
-    'MANIPULATOR': {'icon': 'bi-shuffle',             'team': 'mafia',  'label': 'Manipulator'},
-    # Shahar jamosi
-    'KOMISSAR':    {'icon': 'bi-shield-fill-check',  'team': 'city',   'label': 'Komissar'},
-    'DOKTOR':      {'icon': 'bi-heart-pulse-fill',   'team': 'city',   'label': 'Doktor'},
-    'DETEKTIV':    {'icon': 'bi-search',             'team': 'city',   'label': 'Detektiv'},
-    'ADVOKAT':     {'icon': 'bi-journal-text',       'team': 'city',   'label': 'Advokat'},
-    'JURNALIST':   {'icon': 'bi-newspaper',          'team': 'city',   'label': 'Jurnalist'},
-    'SNAYPER_S':   {'icon': 'bi-crosshair2',          'team': 'city',   'label': 'Snayper (Shahar)'},
-    'FUQARO':      {'icon': 'bi-person-fill',        'team': 'city',   'label': 'Fuqaro'},
-    'CITIZEN':     {'icon': 'bi-person-fill',        'team': 'city',   'label': 'Fuqaro'},
-    # Neytral
-    'MANIAC':      {'icon': 'bi-radioactive',        'team': 'neutral', 'label': 'Maniac'},
-    'JOKER':       {'icon': 'bi-emoji-laughing-fill', 'team': 'neutral', 'label': 'Joker'},
+    # ── Mafia jamosi ─────────────────────────────────────────────────────────────
+    'DON':                    {'icon': 'bi-suit-spade-fill',           'team': 'mafia',   'label': 'Don'},
+    'MAFIA':                  {'icon': 'bi-person-fill-slash',         'team': 'mafia',   'label': 'Mafia'},
+    'ADVOKAT':                {'icon': 'bi-journal-text',              'team': 'mafia',   'label': 'Advokat'},
+    'JURNALIST':              {'icon': 'bi-newspaper',                 'team': 'mafia',   'label': 'Jurnalist'},
+    'OVCHI':                  {'icon': 'bi-crosshair',                 'team': 'mafia',   'label': 'Ovchi'},
+    'GAZABDOR':               {'icon': 'bi-exclamation-triangle-fill', 'team': 'mafia',   'label': "G'azabdor"},
+    # ── Shahar jamosi ────────────────────────────────────────────────────────────
+    'KOMISSAR':               {'icon': 'bi-shield-fill-check',         'team': 'city',    'label': 'Komissar'},
+    'DOKTOR':                 {'icon': 'bi-heart-pulse-fill',          'team': 'city',    'label': 'Doktor'},
+    'SERJANT':                {'icon': 'bi-shield-fill',               'team': 'city',    'label': 'Serjant'},
+    'FUQARO':                 {'icon': 'bi-person-fill',               'team': 'city',    'label': 'Fuqaro'},
+    'DAYDI':                  {'icon': 'bi-person-walking',            'team': 'city',    'label': 'Daydi'},
+    'KEZUVCHI':               {'icon': 'bi-capsule-pill',              'team': 'city',    'label': 'Kezuvchi'},
+    'JANOB':                  {'icon': 'bi-award-fill',                'team': 'city',    'label': 'Janob'},
+    'AFSUNGAR':               {'icon': 'bi-stars',                     'team': 'city',    'label': 'Afsungar'},
+    'KOLDUN':                 {'icon': 'bi-lightning-fill',            'team': 'city',    'label': 'Koldun'},
+    # ── Neytral / yakka ──────────────────────────────────────────────────────────
+    'JOKER':                  {'icon': 'bi-emoji-laughing-fill',       'team': 'neutral', 'label': 'Joker'},
+    'SUIDSID':                {'icon': 'bi-emoji-dizzy-fill',          'team': 'neutral', 'label': 'Suidsid'},
+    'BORI':                   {'icon': 'bi-shuffle',                   'team': 'neutral', 'label': 'Buqalamun'},
+    'QOTIL':                  {'icon': 'bi-knife',                     'team': 'neutral', 'label': 'Qotil'},
+    'AFERIST':                {'icon': 'bi-magic',                     'team': 'neutral', 'label': 'Aferist'},
+    'SEHRGAR':                {'icon': 'bi-brilliance',                'team': 'neutral', 'label': 'Sehrgar'},
+    'KIMYOGAR':               {'icon': 'bi-radioactive',               'team': 'neutral', 'label': 'Kimyogar'},
+    'MINIOR':                 {'icon': 'bi-skull-fill',                'team': 'neutral', 'label': 'Minior'},
+    'VAMPIR':                 {'icon': 'bi-moon-stars-fill',           'team': 'neutral', 'label': 'Vampir'},
+}
+
+# DB dagi emoji string qiymatlarini yuqoridagi kalit nomlariga moslashtiruvchi lug'at
+_ROLE_STR_TO_KEY = {
+    '🤵🏻 Don':              'DON',
+    '🤵🏼 Mafia':            'MAFIA',
+    '🕵🏼 Komissar katani':  'KOMISSAR',
+    '👨🏼‍⚕️️ Doktor':  'DOKTOR',
+    '👮🏼 Serjant':          'SERJANT',
+    '👨🏼 Tinch axoli':      'FUQARO',
+    '🧙‍♂️ Daydi':     'DAYDI',
+    '💊 Anistizolog':        'KEZUVCHI',
+    '👨🏼‍💼 Advokat':  'ADVOKAT',
+    '🤦🏼 Suidsid':          'SUIDSID',
+    '🎖 Janob':              'JANOB',
+    '🦎Buqalamun':           'BORI',
+    '🔪 Qotil':              'QOTIL',
+    '🥷 Убийца':             'OVCHI',
+    '💣 Afsungar':           'AFSUNGAR',
+    '🤹🏻 Aferist':          'AFERIST',
+    "🧌 G'azabkor":          'GAZABDOR',
+    '🧙 Sehrgar':            'SEHRGAR',
+    '👩🏼‍💻 Jurnalist': 'JURNALIST',
+    '⚡️ Koldun':             'KOLDUN',
+    '🤡 Joker':              'JOKER',
+    '☠️  Minior':            'MINIOR',
+    '👨‍🔬 Kimyogar':   'KIMYOGAR',
+    '🧛🏻 Vampir':           'VAMPIR',
 }
 
 def _role_meta(role_raw):
-    key = (role_raw or '').upper().strip()
-    return _ROLE_META.get(key, {
-        'icon': 'bi-person-fill',
-        'team': 'city',
-        'label': role_raw or 'Noma\'lum',
-    })
+    raw = (role_raw or '').strip()
+    # 1. Emoji string → kalit
+    key = _ROLE_STR_TO_KEY.get(raw)
+    # 2. Oddiy katta harf ('DON', 'MAFIA' ...)
+    if key is None:
+        key = raw.upper()
+    meta = _ROLE_META.get(key)
+    if meta:
+        return meta
+    # 3. Qisman moslik: 'Don' → 'DON', 'Mafia' → 'MAFIA'
+    key_upper = raw.upper()
+    for k in _ROLE_META:
+        if key_upper in k or k in key_upper:
+            return _ROLE_META[k]
+    return {
+        'icon':  'bi-person-fill',
+        'team':  'city',
+        'label': raw or "Noma'lum",
+    }
 
 
 def game_stats(request, game_id):
