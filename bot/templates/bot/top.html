@@ -7,10 +7,46 @@
     <p>G'alabalar soni bo'yicha reyting</p>
 </div>
 
+<div class="tg-card mb-4" style="padding:14px 16px">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="text" name="q" class="tg-search" style="max-width:360px" placeholder="Ism yoki Telegram ID bo'yicha qidirish..." value="{{ query }}">
+        <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
+        {% if query %}<a href="?sort={{ sort }}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
+    </form>
+</div>
+
 <div class="tg-card">
     <div class="tg-table-wrap"><table class="tg-table">
         <thead>
-            <tr><th>#</th><th>Foydalanuvchi</th><th>G'alaba</th><th>O'yinlar</th><th>Dollar</th><th>Diamond</th></tr>
+            <tr>
+                <th>#</th>
+                <th>
+                    <a href="?sort={% if sort == '-name' %}name{% else %}-name{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'name' or sort == '-name' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Foydalanuvchi {% if sort == '-name' %}<i class="bi bi-sort-alpha-down"></i>{% elif sort == 'name' %}<i class="bi bi-sort-alpha-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort={% if sort == '-wins' %}wins{% else %}-wins{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'wins' or sort == '-wins' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        G'alaba {% if sort == '-wins' %}<i class="bi bi-sort-numeric-down"></i>{% elif sort == 'wins' %}<i class="bi bi-sort-numeric-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort={% if sort == '-games' %}games{% else %}-games{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'games' or sort == '-games' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        O'yinlar {% if sort == '-games' %}<i class="bi bi-sort-numeric-down"></i>{% elif sort == 'games' %}<i class="bi bi-sort-numeric-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort={% if sort == '-dollar' %}dollar{% else %}-dollar{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'dollar' or sort == '-dollar' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Dollar {% if sort == '-dollar' %}<i class="bi bi-sort-numeric-down"></i>{% elif sort == 'dollar' %}<i class="bi bi-sort-numeric-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort={% if sort == '-diamond' %}diamond{% else %}-diamond{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'diamond' or sort == '-diamond' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Diamond {% if sort == '-diamond' %}<i class="bi bi-sort-numeric-down"></i>{% elif sort == 'diamond' %}<i class="bi bi-sort-numeric-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+            </tr>
         </thead>
         <tbody>
             {% for p in profiles %}
@@ -42,17 +78,17 @@
 {% if profiles.has_other_pages %}
 <div class="tg-pagination">
     {% if profiles.has_previous %}
-    <a class="tg-page-btn" href="?page={{ profiles.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+    <a class="tg-page-btn" href="?page={{ profiles.previous_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
     {% for num in profiles.paginator.page_range %}
         {% if profiles.number == num %}
         <span class="tg-page-btn active">{{ num }}</span>
         {% elif num > profiles.number|add:'-3' and num < profiles.number|add:'3' %}
-        <a class="tg-page-btn" href="?page={{ num }}">{{ num }}</a>
+        <a class="tg-page-btn" href="?page={{ num }}{% if qs %}&{{ qs }}{% endif %}">{{ num }}</a>
         {% endif %}
     {% endfor %}
     {% if profiles.has_next %}
-    <a class="tg-page-btn" href="?page={{ profiles.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+    <a class="tg-page-btn" href="?page={{ profiles.next_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
     {% endif %}
 </div>
 {% endif %}

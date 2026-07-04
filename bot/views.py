@@ -107,6 +107,85 @@ def _stat_period_filter(period):
     return opts.get(period, (None, 'Barcha vaqt'))
 
 
+def _apply_date_filter(qs, date_filter='', date_from='', date_to='', field='created_at'):
+    now = timezone.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    date_filter_map = {
+        'today':     {f'{field}__gte': today_start},
+        'yesterday': {f'{field}__gte': today_start - timedelta(days=1), f'{field}__lt': today_start},
+        'week':      {f'{field}__gte': now - timedelta(days=7)},
+        'month':     {f'{field}__gte': now - timedelta(days=30)},
+        'year':      {f'{field}__gte': now - timedelta(days=365)},
+    }
+    if date_filter in date_filter_map:
+        return qs.filter(**date_filter_map[date_filter])
+    if date_from:
+        qs = qs.filter(**{f'{field}__date__gte': date_from})
+    if date_to:
+        qs = qs.filter(**{f'{field}__date__lte': date_to})
+    return qs
+
+
+def _chart_bucket_key(dt, trunc_type):
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.utc)
+    if trunc_type == 'hour':
+        return dt.strftime('%Y-%m-%d %H')
+    if trunc_type == 'day':
+        return dt.strftime('%Y-%m-%d')
+    return dt.strftime('%Y-%m')
+
+
+def _build_chart_buckets(period, now=None):
+    now = now or timezone.now()
+    cfg = {
+        '12h':   (now - timedelta(hours=12), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
+        '24h':   (now - timedelta(hours=24), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
+        'today': (now.replace(hour=0, minute=0, second=0, microsecond=0), TruncHour, 'hour', '%H:00', timedelta(hours=1)),
+        'week':  (now - timedelta(days=7),   TruncDay,   'day',   '%d.%m', timedelta(days=1)),
+        'month': (now - timedelta(days=30),  TruncDay,   'day',   '%d.%m', timedelta(days=1)),
+        'year':  (now - timedelta(days=365), TruncMonth, 'month', '%m.%Y', None),
+    }
+    start, trunc_fn, trunc_type, fmt, delta = cfg.get(period, cfg['12h'])
+
+    buckets = []
+    if trunc_type == 'month':
+        cur = start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        while cur <= now:
+            buckets.append(cur)
+            cur = cur.replace(year=cur.year + (1 if cur.month == 12 else 0),
+                              month=cur.month % 12 + 1)
+    elif trunc_type == 'hour':
+        cur = start.replace(minute=0, second=0, microsecond=0)
+        while cur <= now:
+            buckets.append(cur)
+            cur += delta
+    else:
+        cur = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        while cur <= now:
+            buckets.append(cur)
+            cur += delta
+
+    return start, trunc_fn, trunc_type, fmt, buckets
+
+
+def _chart_series(qs, field, start, trunc_fn, trunc_type, buckets, fmt):
+    counts = {}
+    for row in (
+        qs.filter(**{f'{field}__gte': start})
+        .annotate(bucket=trunc_fn(field))
+        .values('bucket')
+        .annotate(count=Count('id'))
+        .order_by('bucket')
+    ):
+        counts[_chart_bucket_key(row['bucket'], trunc_type)] = row['count']
+
+    return {
+        'labels': [b.strftime(fmt) for b in buckets],
+        'values': [counts.get(_chart_bucket_key(b, trunc_type), 0) for b in buckets],
+    }
+
+
 @login_required
 def dashboard(request):
     sp = request.GET.get('sp', '')
@@ -164,58 +243,27 @@ def dashboard(request):
 @login_required
 def dashboard_chart_data(request):
     period = request.GET.get('period', '12h')
-    now = timezone.now()
-
-    cfg = {
-        '12h':   (now - timedelta(hours=12), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
-        '24h':   (now - timedelta(hours=24), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
-        'today': (now.replace(hour=0, minute=0, second=0, microsecond=0), TruncHour, 'hour', '%H:00', timedelta(hours=1)),
-        'week':  (now - timedelta(days=7),   TruncDay,   'day',   '%d.%m', timedelta(days=1)),
-        'month': (now - timedelta(days=30),  TruncDay,   'day',   '%d.%m', timedelta(days=1)),
-        'year':  (now - timedelta(days=365), TruncMonth, 'month', '%m.%Y', None),
-    }
-    start, trunc_fn, trunc_type, fmt, delta = cfg.get(period, cfg['12h'])
-
-    buckets = []
-    if trunc_type == 'month':
-        cur = start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        while cur <= now:
-            buckets.append(cur)
-            cur = cur.replace(year=cur.year + (1 if cur.month == 12 else 0),
-                              month=cur.month % 12 + 1)
-    elif trunc_type == 'hour':
-        cur = start.replace(minute=0, second=0, microsecond=0)
-        while cur <= now:
-            buckets.append(cur)
-            cur += delta
-    else:
-        cur = start.replace(hour=0, minute=0, second=0, microsecond=0)
-        while cur <= now:
-            buckets.append(cur)
-            cur += delta
-
-    def bucket_dict(qs, field):
-        return {
-            row['bucket']: row['count']
-            for row in qs.filter(**{f'{field}__gte': start})
-            .annotate(bucket=trunc_fn(field))
-            .values('bucket')
-            .annotate(count=Count('id'))
-            .order_by('bucket')
-        }
-
-    games_d = bucket_dict(Game.objects, 'created_at')
-    players_d = bucket_dict(GamePlayer.objects, 'joined_at')
-
+    start, trunc_fn, trunc_type, fmt, buckets = _build_chart_buckets(period)
+    games = _chart_series(Game.objects, 'created_at', start, trunc_fn, trunc_type, buckets, fmt)
+    players = _chart_series(GamePlayer.objects, 'joined_at', start, trunc_fn, trunc_type, buckets, fmt)
     return JsonResponse({
-        'labels':  [b.strftime(fmt) for b in buckets],
-        'games':   [games_d.get(b, 0) for b in buckets],
-        'players': [players_d.get(b, 0) for b in buckets],
+        'labels': games['labels'],
+        'games': games['values'],
+        'players': players['values'],
     })
 
 
 @login_required
 def active_games(request):
+    query = request.GET.get('q', '')
+    phase_filter = request.GET.get('phase', '')
+    sort = request.GET.get('sort', '-date')
+
+    sort_map = {
+        'date': 'created_at', '-date': '-created_at',
+        'players': 'total_players', '-players': '-total_players',
+        'alive': 'alive_players', '-alive': '-alive_players',
+    }
     games = (
         Game.objects.filter(is_active=True)
         .select_related('chat', 'creator')
@@ -223,9 +271,23 @@ def active_games(request):
             total_players=Count('players', distinct=True),
             alive_players=Count('players', filter=Q(players__is_alive=True), distinct=True),
         )
-        .order_by('-created_at')
     )
-    return render(request, 'bot/active_games.html', {'games': games})
+    if query:
+        games = games.filter(
+            Q(chat__title__icontains=query) | Q(chat__chat_id__icontains=query)
+        )
+    if phase_filter:
+        games = games.filter(phase=phase_filter)
+    games = games.order_by(sort_map.get(sort, '-created_at'))
+
+    qs = urlencode({k: v for k, v in request.GET.items()})
+    return render(request, 'bot/active_games.html', {
+        'games': games,
+        'query': query,
+        'phase_filter': phase_filter,
+        'sort': sort,
+        'qs': qs,
+    })
 
 
 @login_required
@@ -254,6 +316,7 @@ def users_list(request):
         'dollar': 'profile__dollar', '-dollar': '-profile__dollar',
         'diamond': 'profile__diamond', '-diamond': '-profile__diamond',
         'wins': 'profile__wins', '-wins': '-profile__wins',
+        'games': 'profile__games_count', '-games': '-profile__games_count',
         'id': 'id', '-id': '-id',
     }
     users = User.objects.filter(profile__isnull=False).prefetch_related('profile').order_by(sort_map.get(sort, '-id'))
@@ -289,41 +352,125 @@ def user_detail(request, user_id):
 @login_required
 def transfers_list(request):
     type_filter = request.GET.get('type', '')
-    transfers = Transfer.objects.select_related('from_user', 'to_user').order_by('-created_at')
+    query = request.GET.get('q', '')
+    sort = request.GET.get('sort', '-date')
+    date_filter = request.GET.get('date_filter', '')
+
+    sort_map = {
+        'amount': 'amount', '-amount': '-amount',
+        'date': 'created_at', '-date': '-created_at',
+    }
+    transfers = Transfer.objects.select_related('from_user', 'to_user').order_by(
+        sort_map.get(sort, '-created_at')
+    )
     if type_filter:
         transfers = transfers.filter(type=type_filter)
+    if query:
+        transfers = transfers.filter(
+            Q(from_user__full_name__icontains=query) | Q(from_user__mention__icontains=query) |
+            Q(to_user__full_name__icontains=query) | Q(to_user__mention__icontains=query) |
+            Q(from_user__user_id__icontains=query) | Q(to_user__user_id__icontains=query)
+        )
+    transfers = _apply_date_filter(transfers, date_filter)
+
+    qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
     paginator = Paginator(transfers, 50)
     transfers = paginator.get_page(request.GET.get('page'))
-    return render(request, 'bot/transfers.html', {'transfers': transfers, 'type_filter': type_filter})
+    return render(request, 'bot/transfers.html', {
+        'transfers': transfers,
+        'type_filter': type_filter,
+        'query': query,
+        'sort': sort,
+        'date_filter': date_filter,
+        'qs': qs,
+    })
 
 
 @login_required
 def vip_list(request):
-    vips = VipUser.objects.select_related('user').order_by('-created_at')
-    return render(request, 'bot/vip.html', {'vips': vips})
+    query = request.GET.get('q', '')
+    sort = request.GET.get('sort', '-date')
+
+    sort_map = {
+        'name': 'user__full_name', '-name': '-user__full_name',
+        'date': 'created_at', '-date': '-created_at',
+    }
+    vips = VipUser.objects.select_related('user').order_by(sort_map.get(sort, '-created_at'))
+    if query:
+        vips = vips.filter(
+            Q(user__full_name__icontains=query) |
+            Q(user__mention__icontains=query) |
+            Q(user__user_id__icontains=query)
+        )
+
+    qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
+    paginator = Paginator(vips, 50)
+    vips = paginator.get_page(request.GET.get('page'))
+    return render(request, 'bot/vip.html', {
+        'vips': vips,
+        'query': query,
+        'sort': sort,
+        'qs': qs,
+    })
 
 
 @login_required
 def top_players(request):
-    profiles = Profile.objects.select_related('user').order_by('-wins')
+    query = request.GET.get('q', '')
+    sort = request.GET.get('sort', '-wins')
+
+    sort_map = {
+        'wins': 'wins', '-wins': '-wins',
+        'games': 'games_count', '-games': '-games_count',
+        'dollar': 'dollar', '-dollar': '-dollar',
+        'diamond': 'diamond', '-diamond': '-diamond',
+        'name': 'user__full_name', '-name': '-user__full_name',
+    }
+    profiles = Profile.objects.select_related('user').order_by(sort_map.get(sort, '-wins'))
+    if query:
+        profiles = profiles.filter(
+            Q(user__full_name__icontains=query) |
+            Q(user__mention__icontains=query) |
+            Q(user__user_id__icontains=query)
+        )
+
+    qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
     paginator = Paginator(profiles, 50)
     profiles = paginator.get_page(request.GET.get('page'))
-    return render(request, 'bot/top.html', {'profiles': profiles})
+    return render(request, 'bot/top.html', {
+        'profiles': profiles,
+        'query': query,
+        'sort': sort,
+        'qs': qs,
+    })
 
 
 @login_required
 def blocked_list(request):
     query = request.GET.get('q', '')
-    blocked = BlockedUser.objects.select_related('user').order_by('-created_at')
+    sort = request.GET.get('sort', '-date')
+
+    sort_map = {
+        'name': 'user__full_name', '-name': '-user__full_name',
+        'date': 'created_at', '-date': '-created_at',
+    }
+    blocked = BlockedUser.objects.select_related('user').order_by(sort_map.get(sort, '-created_at'))
     if query:
         blocked = blocked.filter(
             Q(user__full_name__icontains=query) |
             Q(user__mention__icontains=query) |
             Q(user__user_id__icontains=query)
         )
+
+    qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
     paginator = Paginator(blocked, 50)
     blocked = paginator.get_page(request.GET.get('page'))
-    return render(request, 'bot/blocked.html', {'blocked': blocked, 'query': query})
+    return render(request, 'bot/blocked.html', {
+        'blocked': blocked,
+        'query': query,
+        'sort': sort,
+        'qs': qs,
+    })
 
 
 @login_required
@@ -360,34 +507,59 @@ def unblock_user(request, blocked_id):
 @login_required
 def giveaways_list(request):
     query = request.GET.get('q', '')
-    sort = request.GET.get('sort', '-created_at')
+    sort = request.GET.get('sort', '-date')
+    status_filter = request.GET.get('status', 'active')
+    date_filter = request.GET.get('date_filter', '')
+
     sort_map = {
         'total': 'total_amount', '-total': '-total_amount',
         'remaining': 'remaining_amount', '-remaining': '-remaining_amount',
+        'distributed': 'distributed', '-distributed': '-distributed',
         'date': 'created_at', '-date': '-created_at',
     }
     chat_title_sq = Chat.objects.filter(chat_id=OuterRef('chat_id')).values('title')[:1]
     giveaways = (
         Giveaway.objects.select_related('creator')
-        .exclude(remaining_amount=0)
-        .annotate(chat_title=Subquery(chat_title_sq))
-        .order_by(sort_map.get(sort, '-created_at'))
+        .annotate(
+            chat_title=Subquery(chat_title_sq),
+            distributed=F('total_amount') - F('remaining_amount'),
+        )
     )
+    if status_filter == 'active':
+        giveaways = giveaways.filter(remaining_amount__gt=0)
+    elif status_filter == 'completed':
+        giveaways = giveaways.filter(remaining_amount=0)
     if query:
+        chat_ids = Chat.objects.filter(
+            Q(title__icontains=query) | Q(chat_id__icontains=query)
+        ).values('chat_id')
         giveaways = giveaways.filter(
             Q(creator__full_name__icontains=query) |
             Q(creator__mention__icontains=query) |
-            Q(creator__user_id__icontains=query)
+            Q(creator__user_id__icontains=query) |
+            Q(chat_id__in=Subquery(chat_ids))
         )
+    giveaways = _apply_date_filter(giveaways, date_filter)
+    giveaways = giveaways.order_by(sort_map.get(sort, '-created_at'))
+
+    qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
     paginator = Paginator(giveaways, 50)
     giveaways = paginator.get_page(request.GET.get('page'))
-    return render(request, 'bot/giveaways.html', {'giveaways': giveaways, 'query': query, 'sort': sort})
+    return render(request, 'bot/giveaways.html', {
+        'giveaways': giveaways,
+        'query': query,
+        'sort': sort,
+        'status_filter': status_filter,
+        'date_filter': date_filter,
+        'qs': qs,
+    })
 
 
 @login_required
 def chats_list(request):
     query = request.GET.get('q', '')
     type_filter = request.GET.get('type', '')
+    status_filter = request.GET.get('status', '')
     sort = request.GET.get('sort', '-date')
     date_filter = request.GET.get('date_filter', '')
     date_from = request.GET.get('date_from', '')
@@ -406,23 +578,12 @@ def chats_list(request):
         chats = chats.filter(Q(title__icontains=query) | Q(chat_id__icontains=query))
     if type_filter:
         chats = chats.filter(type=type_filter)
+    if status_filter == 'blocked':
+        chats = chats.filter(is_blocked=True)
+    elif status_filter == 'active':
+        chats = chats.filter(is_blocked=False)
 
-    now = timezone.now()
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    date_filter_map = {
-        'today':     {'created_at__gte': today_start},
-        'yesterday': {'created_at__gte': today_start - timedelta(days=1), 'created_at__lt': today_start},
-        'week':      {'created_at__gte': now - timedelta(days=7)},
-        'month':     {'created_at__gte': now - timedelta(days=30)},
-        'year':      {'created_at__gte': now - timedelta(days=365)},
-    }
-    if date_filter in date_filter_map:
-        chats = chats.filter(**date_filter_map[date_filter])
-    elif date_from or date_to:
-        if date_from:
-            chats = chats.filter(created_at__date__gte=date_from)
-        if date_to:
-            chats = chats.filter(created_at__date__lte=date_to)
+    chats = _apply_date_filter(chats, date_filter, date_from, date_to)
 
     sort_map = {
         'games':    '-games_count',
@@ -442,6 +603,7 @@ def chats_list(request):
         'chats': chats,
         'query': query,
         'type_filter': type_filter,
+        'status_filter': status_filter,
         'sort': sort,
         'date_filter': date_filter,
         'date_from': date_from,
@@ -621,52 +783,17 @@ def group_chart_data(request):
         return JsonResponse({'labels': [], 'games': [], 'players': []})
 
     period = request.GET.get('period', 'week')
-    now = timezone.now()
-    cfg = {
-        '12h':   (now - timedelta(hours=12), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
-        '24h':   (now - timedelta(hours=24), TruncHour,  'hour',  '%H:00', timedelta(hours=1)),
-        'today': (now.replace(hour=0, minute=0, second=0, microsecond=0), TruncHour, 'hour', '%H:00', timedelta(hours=1)),
-        'week':  (now - timedelta(days=7),   TruncDay,   'day',   '%d.%m', timedelta(days=1)),
-        'month': (now - timedelta(days=30),  TruncDay,   'day',   '%d.%m', timedelta(days=1)),
-        'year':  (now - timedelta(days=365), TruncMonth, 'month', '%m.%Y', None),
-    }
-    start, trunc_fn, trunc_type, fmt, delta = cfg.get(period, cfg['week'])
-
-    buckets = []
-    if trunc_type == 'month':
-        cur = start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        while cur <= now:
-            buckets.append(cur)
-            cur = cur.replace(year=cur.year + (1 if cur.month == 12 else 0),
-                              month=cur.month % 12 + 1)
-    elif trunc_type == 'hour':
-        cur = start.replace(minute=0, second=0, microsecond=0)
-        while cur <= now:
-            buckets.append(cur)
-            cur += delta
-    else:
-        cur = start.replace(hour=0, minute=0, second=0, microsecond=0)
-        while cur <= now:
-            buckets.append(cur)
-            cur += delta
-
-    games_d = {
-        row['bucket']: row['count']
-        for row in Game.objects.filter(chat=chat, created_at__gte=start)
-        .annotate(bucket=trunc_fn('created_at'))
-        .values('bucket').annotate(count=Count('id')).order_by('bucket')
-    }
-    players_d = {
-        row['bucket']: row['count']
-        for row in GamePlayer.objects.filter(game__chat=chat, joined_at__gte=start)
-        .annotate(bucket=trunc_fn('joined_at'))
-        .values('bucket').annotate(count=Count('id')).order_by('bucket')
-    }
-
+    start, trunc_fn, trunc_type, fmt, buckets = _build_chart_buckets(period)
+    games = _chart_series(
+        Game.objects.filter(chat=chat), 'created_at', start, trunc_fn, trunc_type, buckets, fmt
+    )
+    players = _chart_series(
+        GamePlayer.objects.filter(game__chat=chat), 'joined_at', start, trunc_fn, trunc_type, buckets, fmt
+    )
     return JsonResponse({
-        'labels':  [b.strftime(fmt) for b in buckets],
-        'games':   [games_d.get(b, 0) for b in buckets],
-        'players': [players_d.get(b, 0) for b in buckets],
+        'labels': games['labels'],
+        'games': games['values'],
+        'players': players['values'],
     })
 
 

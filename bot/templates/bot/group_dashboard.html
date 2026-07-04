@@ -563,7 +563,7 @@ function buildCharts(data) {
 }
 
 function loadCharts(period) {
-    fetch(`/api/group-chart/?period=${period}`)
+    fetch(`{% url 'group_chart_data' %}?period=${period}`)
         .then(r => r.json()).then(buildCharts);
 }
 

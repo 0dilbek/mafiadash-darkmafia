@@ -57,6 +57,15 @@
                     <a href="?sort=-wins{% if query %}&q={{ query }}{% endif %}" style="color:#708499">G'alaba <i class="bi bi-arrow-down-up"></i></a>
                     {% endif %}
                 </th>
+                <th>
+                    {% if sort == 'games' %}
+                    <a href="?sort=-games{% if query %}&q={{ query }}{% endif %}" style="color:#5288c1">O'yinlar <i class="bi bi-sort-numeric-down"></i></a>
+                    {% elif sort == '-games' %}
+                    <a href="?sort=games{% if query %}&q={{ query }}{% endif %}" style="color:#5288c1">O'yinlar <i class="bi bi-sort-numeric-up"></i></a>
+                    {% else %}
+                    <a href="?sort=-games{% if query %}&q={{ query }}{% endif %}" style="color:#708499">O'yinlar <i class="bi bi-arrow-down-up"></i></a>
+                    {% endif %}
+                </th>
                 <th>Til</th>
                 <th></th>
             </tr>
@@ -83,6 +92,9 @@
                 <td>
                     {% if user.profile %}<span class="tg-badge tg-badge-win">🏆 {{ user.profile.wins }}</span>{% else %}<span style="color:#708499">-</span>{% endif %}
                 </td>
+                <td style="color:#708499">
+                    {% if user.profile %}{{ user.profile.games_count }}{% else %}-{% endif %}
+                </td>
                 <td>
                     {% if user.lang == 'uz' %}🇺🇿 UZ
                     {% elif user.lang == 'ru' %}🇷🇺 RU
@@ -98,7 +110,7 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" style="text-align:center;color:#708499;padding:32px">Foydalanuvchi topilmadi</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:#708499;padding:32px">Foydalanuvchi topilmadi</td></tr>
             {% endfor %}
         </tbody>
     </table></div>

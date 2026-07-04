@@ -351,7 +351,7 @@ function initCharts(data) {
 function loadChartData(period) {
     document.getElementById('gamesLoading').style.display = 'flex';
     document.getElementById('playersLoading').style.display = 'flex';
-    fetch(`/api/chart-data/?period=${period}`)
+    fetch(`{% url 'chart_data' %}?period=${period}`)
         .then(r => r.json())
         .then(data => initCharts(data))
         .catch(() => {

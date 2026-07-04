@@ -9,17 +9,57 @@
 </div>
 
 <div class="tg-card mb-4" style="padding:14px 16px">
-    <div class="filter-tabs">
-        <a href="{% url 'transfers' %}" class="filter-tab {% if not type_filter %}active{% endif %}">Barchasi</a>
-        <a href="?type=dollar" class="filter-tab {% if type_filter == 'dollar' %}active{% endif %}">💵 Dollar</a>
-        <a href="?type=diamond" class="filter-tab {% if type_filter == 'diamond' %}active{% endif %}">💎 Diamond</a>
+    <form method="get" class="mb-3">
+        <div class="d-flex gap-2 flex-wrap">
+            <input type="hidden" name="type" value="{{ type_filter }}">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="hidden" name="date_filter" value="{{ date_filter }}">
+            <input type="text" name="q" class="tg-search" style="max-width:360px" placeholder="Foydalanuvchi yoki ID bo'yicha qidirish..." value="{{ query }}">
+            <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
+            {% if query or type_filter or date_filter %}
+            <a href="{% url 'transfers' %}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>
+            {% endif %}
+        </div>
+    </form>
+    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+        <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Tur:</span>
+        <div class="filter-tabs">
+            <a href="?q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}" class="filter-tab {% if not type_filter %}active{% endif %}">Barchasi</a>
+            <a href="?type=dollar&q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}" class="filter-tab {% if type_filter == 'dollar' %}active{% endif %}">💵 Dollar</a>
+            <a href="?type=diamond&q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}" class="filter-tab {% if type_filter == 'diamond' %}active{% endif %}">💎 Diamond</a>
+        </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Vaqt:</span>
+        <div class="filter-tabs">
+            <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}" class="filter-tab {% if not date_filter %}active{% endif %}">Barchasi</a>
+            <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=today" class="filter-tab {% if date_filter == 'today' %}active{% endif %}">Bugun</a>
+            <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=week" class="filter-tab {% if date_filter == 'week' %}active{% endif %}">Hafta</a>
+            <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=month" class="filter-tab {% if date_filter == 'month' %}active{% endif %}">Oy</a>
+            <a href="?q={{ query }}&type={{ type_filter }}&sort={{ sort }}&date_filter=year" class="filter-tab {% if date_filter == 'year' %}active{% endif %}">Yil</a>
+        </div>
     </div>
 </div>
 
 <div class="tg-card">
     <div class="tg-table-wrap"><table class="tg-table">
         <thead>
-            <tr><th>ID</th><th>Kim dan</th><th>Kimga</th><th>Miqdor</th><th>Tur</th><th>Vaqt</th></tr>
+            <tr>
+                <th>ID</th>
+                <th>Kim dan</th>
+                <th>Kimga</th>
+                <th>
+                    <a href="?sort={% if sort == '-amount' %}amount{% else %}-amount{% endif %}&type={{ type_filter }}&q={{ query }}&date_filter={{ date_filter }}" style="color:{% if sort == 'amount' or sort == '-amount' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Miqdor {% if sort == '-amount' %}<i class="bi bi-sort-numeric-down"></i>{% elif sort == 'amount' %}<i class="bi bi-sort-numeric-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>Tur</th>
+                <th>
+                    <a href="?sort={% if sort == '-date' %}date{% else %}-date{% endif %}&type={{ type_filter }}&q={{ query }}&date_filter={{ date_filter }}" style="color:{% if sort == 'date' or sort == '-date' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Vaqt {% if sort == '-date' %}<i class="bi bi-sort-down"></i>{% elif sort == 'date' %}<i class="bi bi-sort-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+            </tr>
         </thead>
         <tbody>
             {% for t in transfers %}
@@ -47,17 +87,17 @@
 {% if transfers.has_other_pages %}
 <div class="tg-pagination">
     {% if transfers.has_previous %}
-    <a class="tg-page-btn" href="?page={{ transfers.previous_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    <a class="tg-page-btn" href="?page={{ transfers.previous_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
     {% for num in transfers.paginator.page_range %}
         {% if transfers.number == num %}
         <span class="tg-page-btn active">{{ num }}</span>
         {% elif num > transfers.number|add:'-3' and num < transfers.number|add:'3' %}
-        <a class="tg-page-btn" href="?page={{ num }}{% if type_filter %}&type={{ type_filter }}{% endif %}">{{ num }}</a>
+        <a class="tg-page-btn" href="?page={{ num }}{% if qs %}&{{ qs }}{% endif %}">{{ num }}</a>
         {% endif %}
     {% endfor %}
     {% if transfers.has_next %}
-    <a class="tg-page-btn" href="?page={{ transfers.next_page_number }}{% if type_filter %}&type={{ type_filter }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    <a class="tg-page-btn" href="?page={{ transfers.next_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
     {% endif %}
 </div>
 {% endif %}

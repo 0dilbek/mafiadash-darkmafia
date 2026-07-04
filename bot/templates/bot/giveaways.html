@@ -9,19 +9,35 @@
 </div>
 
 <div class="tg-card mb-4" style="padding:14px 16px">
-    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap">
+    <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         <input type="hidden" name="sort" value="{{ sort }}">
-        <input type="text" name="q" value="{{ query }}" placeholder="Yaratuvchi bo'yicha qidirish..."
-            style="flex:1;min-width:180px;background:#1c2631;border:1px solid #2a3a4a;border-radius:8px;padding:8px 12px;color:#e0e0e0;font-size:0.9rem;outline:none">
-        <button type="submit" class="tg-btn tg-btn-primary" style="padding:8px 18px">
-            <i class="bi bi-search"></i> Qidirish
-        </button>
-        {% if query %}
-        <a href="{% url 'giveaways' %}?sort={{ sort }}" class="tg-btn" style="padding:8px 14px;background:#2a3a4a;color:#e0e0e0">
-            <i class="bi bi-x"></i>
-        </a>
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <input type="hidden" name="date_filter" value="{{ date_filter }}">
+        <input type="text" name="q" value="{{ query }}" placeholder="Yaratuvchi yoki guruh bo'yicha qidirish..."
+            class="tg-search" style="flex:1;min-width:180px">
+        <button type="submit" class="tg-btn"><i class="bi bi-search me-1"></i>Qidirish</button>
+        {% if query or status_filter != 'active' or date_filter %}
+        <a href="{% url 'giveaways' %}?sort={{ sort }}" class="tg-btn tg-btn-ghost">Tozalash</a>
         {% endif %}
     </form>
+    <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+        <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Holat:</span>
+        <div class="filter-tabs">
+            <a href="?q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}&status=active" class="filter-tab {% if status_filter == 'active' %}active{% endif %}">Faol</a>
+            <a href="?q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}&status=completed" class="filter-tab {% if status_filter == 'completed' %}active{% endif %}">Tugagan</a>
+            <a href="?q={{ query }}&sort={{ sort }}&date_filter={{ date_filter }}&status=all" class="filter-tab {% if status_filter == 'all' %}active{% endif %}">Barchasi</a>
+        </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Vaqt:</span>
+        <div class="filter-tabs">
+            <a href="?q={{ query }}&sort={{ sort }}&status={{ status_filter }}" class="filter-tab {% if not date_filter %}active{% endif %}">Barchasi</a>
+            <a href="?q={{ query }}&sort={{ sort }}&status={{ status_filter }}&date_filter=today" class="filter-tab {% if date_filter == 'today' %}active{% endif %}">Bugun</a>
+            <a href="?q={{ query }}&sort={{ sort }}&status={{ status_filter }}&date_filter=week" class="filter-tab {% if date_filter == 'week' %}active{% endif %}">Hafta</a>
+            <a href="?q={{ query }}&sort={{ sort }}&status={{ status_filter }}&date_filter=month" class="filter-tab {% if date_filter == 'month' %}active{% endif %}">Oy</a>
+            <a href="?q={{ query }}&sort={{ sort }}&status={{ status_filter }}&date_filter=year" class="filter-tab {% if date_filter == 'year' %}active{% endif %}">Yil</a>
+        </div>
+    </div>
 </div>
 
 <div class="tg-card">
@@ -31,21 +47,25 @@
                 <th>ID</th>
                 <th>Yaratuvchi</th>
                 <th>
-                    <a href="?sort={% if sort == '-total' %}total{% else %}-total{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:inherit;text-decoration:none">
+                    <a href="?sort={% if sort == '-total' %}total{% else %}-total{% endif %}&q={{ query }}&status={{ status_filter }}&date_filter={{ date_filter }}" style="color:inherit;text-decoration:none">
                         Jami {% if sort == '-total' %}<i class="bi bi-sort-down"></i>{% elif sort == 'total' %}<i class="bi bi-sort-up"></i>{% endif %}
                     </a>
                 </th>
-                <th>Tarqatildi</th>
                 <th>
-                    <a href="?sort={% if sort == '-remaining' %}remaining{% else %}-remaining{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:inherit;text-decoration:none">
+                    <a href="?sort={% if sort == '-distributed' %}distributed{% else %}-distributed{% endif %}&q={{ query }}&status={{ status_filter }}&date_filter={{ date_filter }}" style="color:inherit;text-decoration:none">
+                        Tarqatildi {% if sort == '-distributed' %}<i class="bi bi-sort-down"></i>{% elif sort == 'distributed' %}<i class="bi bi-sort-up"></i>{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="?sort={% if sort == '-remaining' %}remaining{% else %}-remaining{% endif %}&q={{ query }}&status={{ status_filter }}&date_filter={{ date_filter }}" style="color:inherit;text-decoration:none">
                         Qoldi {% if sort == '-remaining' %}<i class="bi bi-sort-down"></i>{% elif sort == 'remaining' %}<i class="bi bi-sort-up"></i>{% endif %}
                     </a>
                 </th>
                 <th>Guruh</th>
                 <th>Olganlar</th>
                 <th>
-                    <a href="?sort={% if sort == '-date' %}date{% else %}-date{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:inherit;text-decoration:none">
-                        Vaqt {% if sort == '-date' or sort == '-created_at' %}<i class="bi bi-sort-down"></i>{% elif sort == 'date' %}<i class="bi bi-sort-up"></i>{% endif %}
+                    <a href="?sort={% if sort == '-date' %}date{% else %}-date{% endif %}&q={{ query }}&status={{ status_filter }}&date_filter={{ date_filter }}" style="color:inherit;text-decoration:none">
+                        Vaqt {% if sort == '-date' %}<i class="bi bi-sort-down"></i>{% elif sort == 'date' %}<i class="bi bi-sort-up"></i>{% endif %}
                     </a>
                 </th>
             </tr>
@@ -89,7 +109,7 @@
                 <td style="color:#708499;font-size:0.82rem">{{ g.created_at|tz5|date:"d.m.Y H:i" }}</td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" style="text-align:center;color:#708499;padding:32px">Giveaway topilmadi</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:#708499;padding:32px">Giveaway topilmadi</td></tr>
             {% endfor %}
         </tbody>
     </table></div>
@@ -98,7 +118,7 @@
 {% if giveaways.has_other_pages %}
 <div class="tg-pagination">
     {% if giveaways.has_previous %}
-    <a class="tg-page-btn" href="?page={{ giveaways.previous_page_number }}&sort={{ sort }}{% if query %}&q={{ query }}{% endif %}">
+    <a class="tg-page-btn" href="?page={{ giveaways.previous_page_number }}{% if qs %}&{{ qs }}{% endif %}">
         <i class="bi bi-chevron-left"></i>
     </a>
     {% endif %}
@@ -106,11 +126,11 @@
         {% if giveaways.number == num %}
         <span class="tg-page-btn active">{{ num }}</span>
         {% elif num > giveaways.number|add:'-3' and num < giveaways.number|add:'3' %}
-        <a class="tg-page-btn" href="?page={{ num }}&sort={{ sort }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+        <a class="tg-page-btn" href="?page={{ num }}{% if qs %}&{{ qs }}{% endif %}">{{ num }}</a>
         {% endif %}
     {% endfor %}
     {% if giveaways.has_next %}
-    <a class="tg-page-btn" href="?page={{ giveaways.next_page_number }}&sort={{ sort }}{% if query %}&q={{ query }}{% endif %}">
+    <a class="tg-page-btn" href="?page={{ giveaways.next_page_number }}{% if qs %}&{{ qs }}{% endif %}">
         <i class="bi bi-chevron-right"></i>
     </a>
     {% endif %}

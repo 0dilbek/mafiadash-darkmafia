@@ -50,16 +50,30 @@
     <div class="col-md-8">
         <div class="tg-card" style="padding:14px 16px;margin-bottom:16px">
             <form class="d-flex gap-2" method="get">
+                <input type="hidden" name="sort" value="{{ sort }}">
                 <input type="text" name="q" class="tg-search" placeholder="Bloklangan foydalanuvchilar orasida qidirish..." value="{{ query }}">
                 <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
-                {% if query %}<a href="{% url 'blocked' %}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
+                {% if query %}<a href="?sort={{ sort }}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
             </form>
         </div>
 
         <div class="tg-card">
             <div class="tg-table-wrap"><table class="tg-table">
                 <thead>
-                    <tr><th>Foydalanuvchi</th><th>Telegram ID</th><th>Bloklangan sana</th><th></th></tr>
+                    <tr>
+                        <th>
+                            <a href="?sort={% if sort == '-name' %}name{% else %}-name{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'name' or sort == '-name' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                                Foydalanuvchi {% if sort == '-name' %}<i class="bi bi-sort-alpha-down"></i>{% elif sort == 'name' %}<i class="bi bi-sort-alpha-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th>Telegram ID</th>
+                        <th>
+                            <a href="?sort={% if sort == '-date' %}date{% else %}-date{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'date' or sort == '-date' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                                Bloklangan sana {% if sort == '-date' %}<i class="bi bi-sort-down"></i>{% elif sort == 'date' %}<i class="bi bi-sort-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                            </a>
+                        </th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for b in blocked %}
@@ -98,17 +112,17 @@
 {% if blocked.has_other_pages %}
 <div class="tg-pagination">
     {% if blocked.has_previous %}
-    <a class="tg-page-btn" href="?page={{ blocked.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    <a class="tg-page-btn" href="?page={{ blocked.previous_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
     {% endif %}
     {% for num in blocked.paginator.page_range %}
         {% if blocked.number == num %}
         <span class="tg-page-btn active">{{ num }}</span>
         {% elif num > blocked.number|add:'-3' and num < blocked.number|add:'3' %}
-        <a class="tg-page-btn" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+        <a class="tg-page-btn" href="?page={{ num }}{% if qs %}&{{ qs }}{% endif %}">{{ num }}</a>
         {% endif %}
     {% endfor %}
     {% if blocked.has_next %}
-    <a class="tg-page-btn" href="?page={{ blocked.next_page_number }}{% if query %}&q={{ query }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    <a class="tg-page-btn" href="?page={{ blocked.next_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
     {% endif %}
 </div>
 {% endif %}

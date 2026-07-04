@@ -16,6 +16,27 @@
     </div>
 </div>
 
+<div class="tg-card mb-4" style="padding:14px 16px">
+    <form method="get" class="mb-3">
+        <div class="d-flex gap-2 flex-wrap">
+            <input type="hidden" name="phase" value="{{ phase_filter }}">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <input type="text" name="q" class="tg-search" style="max-width:360px" placeholder="Guruh nomi yoki Chat ID bo'yicha qidirish..." value="{{ query }}">
+            <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
+            {% if query or phase_filter %}<a href="{% url 'active_games' %}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
+        </div>
+    </form>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <span style="font-size:0.78rem;color:#708499;white-space:nowrap">Holat:</span>
+        <div class="filter-tabs">
+            <a href="?q={{ query }}&sort={{ sort }}" class="filter-tab {% if not phase_filter %}active{% endif %}">Barchasi</a>
+            <a href="?phase=waiting&q={{ query }}&sort={{ sort }}" class="filter-tab {% if phase_filter == 'waiting' %}active{% endif %}">⏳ Kutilmoqda</a>
+            <a href="?phase=night&q={{ query }}&sort={{ sort }}" class="filter-tab {% if phase_filter == 'night' %}active{% endif %}">🌙 Tun</a>
+            <a href="?phase=day&q={{ query }}&sort={{ sort }}" class="filter-tab {% if phase_filter == 'day' %}active{% endif %}">☀️ Kun</a>
+        </div>
+    </div>
+</div>
+
 {% if not games %}
 <div class="tg-card" style="padding:60px 20px;text-align:center">
     <i class="bi bi-controller" style="font-size:3rem;color:#2b3a4a"></i>
@@ -29,10 +50,18 @@
             <tr>
                 <th>#</th>
                 <th>Guruh</th>
-                <th>O'yinchilar</th>
+                <th>
+                    <a href="?sort={% if sort == '-players' %}players{% else %}-players{% endif %}&q={{ query }}&phase={{ phase_filter }}" style="color:{% if sort == 'players' or sort == '-players' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        O'yinchilar {% if sort == '-players' %}<i class="bi bi-sort-numeric-down"></i>{% elif sort == 'players' %}<i class="bi bi-sort-numeric-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
                 <th>Holat</th>
                 <th>Rejim</th>
-                <th>Boshlangan</th>
+                <th>
+                    <a href="?sort={% if sort == '-date' %}date{% else %}-date{% endif %}&q={{ query }}&phase={{ phase_filter }}" style="color:{% if sort == 'date' or sort == '-date' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Boshlangan {% if sort == '-date' %}<i class="bi bi-sort-down"></i>{% elif sort == 'date' %}<i class="bi bi-sort-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
                 <th>Havola</th>
                 <th></th>
             </tr>

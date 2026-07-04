@@ -5,16 +5,40 @@
 {% block content %}
 <div class="page-header">
     <h1><i class="bi bi-star me-2" style="color:#ffd700"></i>VIP Foydalanuvchilar</h1>
-    <p>Jami {{ vips|length }} ta VIP</p>
+    <p>Jami {{ vips.paginator.count }} ta VIP</p>
+</div>
+
+<div class="tg-card mb-4" style="padding:14px 16px">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="text" name="q" class="tg-search" style="max-width:360px" placeholder="Ism yoki Telegram ID bo'yicha qidirish..." value="{{ query }}">
+        <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-search me-1"></i>Qidirish</button>
+        {% if query %}<a href="?sort={{ sort }}" class="tg-btn tg-btn-ghost" style="white-space:nowrap">Tozalash</a>{% endif %}
+    </form>
 </div>
 
 <div class="tg-card">
     <div class="tg-table-wrap"><table class="tg-table">
-        <thead><tr><th>#</th><th>Foydalanuvchi</th><th>Telegram ID</th><th>Qo'shilgan</th></tr></thead>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>
+                    <a href="?sort={% if sort == '-name' %}name{% else %}-name{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'name' or sort == '-name' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Foydalanuvchi {% if sort == '-name' %}<i class="bi bi-sort-alpha-down"></i>{% elif sort == 'name' %}<i class="bi bi-sort-alpha-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+                <th>Telegram ID</th>
+                <th>
+                    <a href="?sort={% if sort == '-date' %}date{% else %}-date{% endif %}{% if query %}&q={{ query }}{% endif %}" style="color:{% if sort == 'date' or sort == '-date' %}#5288c1{% else %}#708499{% endif %};text-decoration:none">
+                        Qo'shilgan {% if sort == '-date' %}<i class="bi bi-sort-down"></i>{% elif sort == 'date' %}<i class="bi bi-sort-up"></i>{% else %}<i class="bi bi-arrow-down-up" style="opacity:.4"></i>{% endif %}
+                    </a>
+                </th>
+            </tr>
+        </thead>
         <tbody>
             {% for v in vips %}
             <tr>
-                <td style="color:#708499">{{ forloop.counter }}</td>
+                <td style="color:#708499">{{ forloop.counter|add:vips.start_index|add:"-1" }}</td>
                 <td>
                     <div class="user-info">
                         <div class="user-avatar" style="background:linear-gradient(135deg,#7a5c00,#ffd700);color:#000">⭐</div>
@@ -30,4 +54,22 @@
         </tbody>
     </table></div>
 </div>
+
+{% if vips.has_other_pages %}
+<div class="tg-pagination">
+    {% if vips.has_previous %}
+    <a class="tg-page-btn" href="?page={{ vips.previous_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+    {% endif %}
+    {% for num in vips.paginator.page_range %}
+        {% if vips.number == num %}
+        <span class="tg-page-btn active">{{ num }}</span>
+        {% elif num > vips.number|add:'-3' and num < vips.number|add:'3' %}
+        <a class="tg-page-btn" href="?page={{ num }}{% if qs %}&{{ qs }}{% endif %}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if vips.has_next %}
+    <a class="tg-page-btn" href="?page={{ vips.next_page_number }}{% if qs %}&{{ qs }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+    {% endif %}
+</div>
+{% endif %}
 {% endblock %}
