@@ -507,6 +507,7 @@ def game_stats(request, game_id):
         'end_stats':    end_stats,
         'winners':      winners,
         'losers':       losers,
+        'players_count': len(players),
         'winning_team': winning_team,
         'team_tally':   team_tally,
         'has_scores':   bool(score_rows),
