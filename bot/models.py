@@ -134,7 +134,7 @@ class DarkCoinTransaction(models.Model):
     coin_amount = models.BigIntegerField()
     diamond_amount = models.BigIntegerField(default=0)
     btc_usd_rate = models.DecimalField(max_digits=20, decimal_places=8)
-    darkcoin_diamond_rate = models.DecimalField(max_digits=20, decimal_places=8)
+    darkcoin_diamond_rate = models.BigIntegerField()
     darkcoin_uzs_rate = models.DecimalField(max_digits=24, decimal_places=2)
     balance_before = models.BigIntegerField()
     balance_after = models.BigIntegerField()

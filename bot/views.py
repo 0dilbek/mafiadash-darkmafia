@@ -9,7 +9,7 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import urlencode
 import json as _json
 from .models import (
@@ -430,7 +430,10 @@ def darkcoin_dashboard(request):
     if current_rate and baseline_rate and baseline_rate.btc_usd:
         multiplier = current_rate.btc_usd / baseline_rate.btc_usd
         market_change = (multiplier - Decimal('1')) * Decimal('100')
-        current_diamond_price = multiplier * Decimal('40')
+        current_diamond_price = max(
+            1,
+            int((multiplier * Decimal('40')).to_integral_value(rounding=ROUND_HALF_UP)),
+        )
         current_uzs_price = multiplier * Decimal('45000')
 
     qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
