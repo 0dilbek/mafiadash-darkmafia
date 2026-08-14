@@ -97,7 +97,7 @@ class DarkCoinWallet(models.Model):
     profile = models.OneToOneField(
         Profile, related_name="darkcoin_wallet", on_delete=models.CASCADE
     )
-    balance = models.DecimalField(max_digits=28, decimal_places=8, default=0)
+    balance = models.BigIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -131,19 +131,15 @@ class DarkCoinTransaction(models.Model):
         on_delete=models.PROTECT,
     )
     transaction_type = models.CharField(max_length=16)
-    coin_amount = models.DecimalField(max_digits=28, decimal_places=8)
+    coin_amount = models.BigIntegerField()
     diamond_amount = models.BigIntegerField(default=0)
     btc_usd_rate = models.DecimalField(max_digits=20, decimal_places=8)
     darkcoin_diamond_rate = models.DecimalField(max_digits=20, decimal_places=8)
     darkcoin_uzs_rate = models.DecimalField(max_digits=24, decimal_places=2)
-    balance_before = models.DecimalField(max_digits=28, decimal_places=8)
-    balance_after = models.DecimalField(max_digits=28, decimal_places=8)
-    counterparty_balance_before = models.DecimalField(
-        max_digits=28, decimal_places=8, null=True, blank=True
-    )
-    counterparty_balance_after = models.DecimalField(
-        max_digits=28, decimal_places=8, null=True, blank=True
-    )
+    balance_before = models.BigIntegerField()
+    balance_after = models.BigIntegerField()
+    counterparty_balance_before = models.BigIntegerField(null=True, blank=True)
+    counterparty_balance_after = models.BigIntegerField(null=True, blank=True)
     telegram_chat_id = models.BigIntegerField(null=True, blank=True)
     idempotency_key = models.CharField(max_length=128, null=True, blank=True, unique=True)
     note = models.CharField(max_length=500, default="", blank=True)
