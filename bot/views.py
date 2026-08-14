@@ -9,12 +9,14 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.conf import settings
 from datetime import timedelta
+from decimal import Decimal
 from urllib.parse import urlencode
 import json as _json
 from .models import (
     User, BlockedUser, Profile, Transfer, VipUser, Para, Chat, Giveaway,
     Game, GamePlayer, GamePhase, GroupBalance, BlockGroups, AdminLoginToken,
     ChatRoleOrder,
+    DarkCoinWallet, BitcoinRate, DarkCoinTransaction,
 )
 
 # ── Rol tizimlari ──────────────────────────────────────────────────────────────
@@ -381,6 +383,80 @@ def transfers_list(request):
         'type_filter': type_filter,
         'query': query,
         'sort': sort,
+        'date_filter': date_filter,
+        'qs': qs,
+    })
+
+
+@login_required
+def darkcoin_dashboard(request):
+    query = request.GET.get('q', '').strip()
+    action_filter = request.GET.get('action', '')
+    date_filter = request.GET.get('date_filter', '')
+
+    transactions = DarkCoinTransaction.objects.select_related(
+        'wallet__profile__user', 'counterparty_wallet__profile__user'
+    ).order_by('-created_at')
+    if action_filter in {'buy', 'sell', 'transfer'}:
+        transactions = transactions.filter(transaction_type=action_filter)
+    if query:
+        transactions = transactions.filter(
+            Q(wallet__profile__user__full_name__icontains=query) |
+            Q(wallet__profile__user__mention__icontains=query) |
+            Q(wallet__profile__user__user_id__icontains=query) |
+            Q(counterparty_wallet__profile__user__full_name__icontains=query) |
+            Q(counterparty_wallet__profile__user__mention__icontains=query) |
+            Q(counterparty_wallet__profile__user__user_id__icontains=query) |
+            Q(note__icontains=query)
+        )
+    transactions = _apply_date_filter(transactions, date_filter)
+
+    wallets = DarkCoinWallet.objects.select_related('profile__user')
+    totals = wallets.aggregate(total=Sum('balance'))
+    buy_stats = DarkCoinTransaction.objects.filter(transaction_type='buy').aggregate(
+        coin=Sum('coin_amount'), diamonds=Sum('diamond_amount')
+    )
+    sell_stats = DarkCoinTransaction.objects.filter(transaction_type='sell').aggregate(
+        coin=Sum('coin_amount'), diamonds=Sum('diamond_amount')
+    )
+    transfer_stats = DarkCoinTransaction.objects.filter(transaction_type='transfer').aggregate(
+        coin=Sum('coin_amount'), count=Count('id')
+    )
+    current_rate = BitcoinRate.objects.order_by('-fetched_at').first()
+    baseline_rate = BitcoinRate.objects.filter(is_baseline=True).order_by('fetched_at').first()
+    market_change = None
+    current_diamond_price = None
+    current_uzs_price = None
+    if current_rate and baseline_rate and baseline_rate.btc_usd:
+        multiplier = current_rate.btc_usd / baseline_rate.btc_usd
+        market_change = (multiplier - Decimal('1')) * Decimal('100')
+        current_diamond_price = multiplier * Decimal('40')
+        current_uzs_price = multiplier * Decimal('45000')
+
+    qs = urlencode({k: v for k, v in request.GET.items() if k != 'page'})
+    paginator = Paginator(transactions, 50)
+    transaction_page = paginator.get_page(request.GET.get('page'))
+    return render(request, 'bot/darkcoin.html', {
+        'transactions': transaction_page,
+        'wallet_count': wallets.count(),
+        'holder_count': wallets.filter(balance__gt=0).count(),
+        'total_supply': totals['total'] or 0,
+        'buy_coin': buy_stats['coin'] or 0,
+        'buy_diamonds': buy_stats['diamonds'] or 0,
+        'sell_coin': sell_stats['coin'] or 0,
+        'sell_diamonds': sell_stats['diamonds'] or 0,
+        'transfer_coin': transfer_stats['coin'] or 0,
+        'transfer_count': transfer_stats['count'] or 0,
+        'transaction_count': DarkCoinTransaction.objects.count(),
+        'current_rate': current_rate,
+        'baseline_rate': baseline_rate,
+        'market_change': market_change,
+        'current_diamond_price': current_diamond_price,
+        'current_uzs_price': current_uzs_price,
+        'recent_rates': BitcoinRate.objects.order_by('-fetched_at')[:20],
+        'top_wallets': wallets.filter(balance__gt=0).order_by('-balance')[:20],
+        'query': query,
+        'action_filter': action_filter,
         'date_filter': date_filter,
         'qs': qs,
     })

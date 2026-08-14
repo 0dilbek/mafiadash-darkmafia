@@ -12,6 +12,7 @@ urlpatterns = [
 
     # Moliya
     path('transfers/', views.transfers_list, name='transfers'),
+    path('darkcoin/', views.darkcoin_dashboard, name='darkcoin'),
     path('vip/', views.vip_list, name='vip'),
     path('top/', views.top_players, name='top'),
 
