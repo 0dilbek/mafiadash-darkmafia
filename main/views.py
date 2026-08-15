@@ -398,6 +398,64 @@ def _role_meta(role_raw):
     }
 
 
+_GAME_TEAM_LABELS = {
+    'red': 'Qizil',
+    'blue': "Ko'k",
+    'green': 'Yashil',
+    'yellow': 'Sariq',
+    'purple': 'Binafsha',
+    'orange': "To'q sariq",
+    'black': 'Qora',
+    'white': 'Oq',
+    'brown': 'Jigarrang',
+}
+
+
+def _normalize_game_team(team):
+    value = (team or '').strip().lower()
+    return value if value in _GAME_TEAM_LABELS else ''
+
+
+def _game_mode_context(mode, winners):
+    mode_raw = (mode or 'classic').strip()
+    mode_lower = mode_raw.lower()
+    is_team_game = 'vsgame' in mode_lower
+    is_para_game = mode_lower.startswith('para')
+    winning_team_color = ''
+
+    if is_team_game:
+        color_tally = {}
+        for player in winners:
+            color = player.get('game_team')
+            if color:
+                color_tally[color] = color_tally.get(color, 0) + 1
+        if color_tally:
+            winning_team_color = max(color_tally, key=color_tally.get)
+
+        suffix = mode_lower.split('vsgame', 1)[1]
+        team_count = ''.join(char for char in suffix if char.isdigit())
+        mode_label = 'Teamgame'
+        if team_count:
+            mode_label += f' · {team_count} jamoa'
+        result_variant = 'teamgame'
+    elif is_para_game:
+        para_variant = mode_raw.split('x', 1)[1].strip().title() if 'x' in mode_raw else ''
+        mode_label = 'Para' + (f' · {para_variant}' if para_variant else '')
+        result_variant = 'para'
+    else:
+        mode_label = mode_raw.title()
+        result_variant = ''
+
+    return {
+        'is_team_game': is_team_game,
+        'is_para_game': is_para_game,
+        'result_variant': result_variant,
+        'winning_team_color': winning_team_color,
+        'winning_team_label': _GAME_TEAM_LABELS.get(winning_team_color, "G'olib"),
+        'mode_label': mode_label,
+    }
+
+
 def game_stats(request, game_id):
     game = get_object_or_404(Game, pk=game_id)
 
@@ -436,6 +494,13 @@ def game_stats(request, game_id):
     except Exception:
         pass
 
+    game_player_rows = list(
+        GamePlayer.objects.filter(game=game)
+        .select_related('user')
+        .order_by('-win')
+    )
+    game_player_map = {player.user_id: player for player in game_player_rows}
+
     # ── Build unified player list ─────────────────────────────────────────────────
     players = []
     seen_ids = set()
@@ -444,8 +509,10 @@ def game_stats(request, game_id):
         uid = s.user_id
         seen_ids.add(uid)
         astat  = action_map.get(uid)
-        role_raw = astat.role if astat else ''
+        game_player = game_player_map.get(uid)
+        role_raw = astat.role if astat else (game_player.role if game_player else '')
         meta = _role_meta(role_raw)
+        game_team = _normalize_game_team(game_player.team if game_player else '')
         players.append({
             'name':      s.user.full_name or f'User #{s.user.user_id}',
             'role':      meta['label'],
@@ -455,6 +522,8 @@ def game_stats(request, game_id):
             'is_win':    s.is_win,
             'kills':     astat.kills     if astat else 0,
             'kom_finds': astat.kom_finds if astat else 0,
+            'game_team': game_team,
+            'game_team_label': _GAME_TEAM_LABELS.get(game_team, ''),
         })
 
     # Fallback: players in action_map but not in score_rows
@@ -462,6 +531,8 @@ def game_stats(request, game_id):
         if uid in seen_ids:
             continue
         meta = _role_meta(astat.role)
+        game_player = game_player_map.get(uid)
+        game_team = _normalize_game_team(game_player.team if game_player else '')
         players.append({
             'name':      astat.user.full_name or f'User #{astat.user.user_id}',
             'role':      meta['label'],
@@ -471,12 +542,15 @@ def game_stats(request, game_id):
             'is_win':    astat.is_win,
             'kills':     astat.kills,
             'kom_finds': astat.kom_finds,
+            'game_team': game_team,
+            'game_team_label': _GAME_TEAM_LABELS.get(game_team, ''),
         })
 
     # If neither table has data — fall back to GamePlayer
     if not players:
-        for gp in GamePlayer.objects.filter(game=game).select_related('user').order_by('-win'):
+        for gp in game_player_rows:
             meta = _role_meta(gp.role)
+            game_team = _normalize_game_team(gp.team)
             players.append({
                 'name':      gp.user.full_name or f'User #{gp.user.user_id}',
                 'role':      meta['label'],
@@ -486,6 +560,8 @@ def game_stats(request, game_id):
                 'is_win':    gp.win,
                 'kills':     0,
                 'kom_finds': 0,
+                'game_team': game_team,
+                'game_team_label': _GAME_TEAM_LABELS.get(game_team, ''),
             })
 
     winners = [p for p in players if p['is_win']]
@@ -496,6 +572,26 @@ def game_stats(request, game_id):
     for p in winners:
         team_tally[p['team']] = team_tally.get(p['team'], 0) + 1
     winning_team = max(team_tally, key=team_tally.get) if team_tally else 'city'
+    mode_context = _game_mode_context(game.mode, winners)
+    if not mode_context['result_variant']:
+        mode_context['result_variant'] = winning_team
+
+    team_filters = []
+    if mode_context['is_team_game']:
+        team_counts = {}
+        for player in players:
+            color = player['game_team']
+            if color:
+                team_counts[color] = team_counts.get(color, 0) + 1
+        team_filters = [
+            {
+                'key': color,
+                'label': _GAME_TEAM_LABELS[color],
+                'count': team_counts[color],
+            }
+            for color in _GAME_TEAM_LABELS
+            if color in team_counts
+        ]
 
     played_at = end_stats.played_at if end_stats else game.created_at
 
@@ -512,4 +608,6 @@ def game_stats(request, game_id):
         'team_tally':   team_tally,
         'has_scores':   bool(score_rows),
         'has_actions':  bool(action_map),
+        'team_filters': team_filters,
+        **mode_context,
     })

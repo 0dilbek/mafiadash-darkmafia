@@ -46,6 +46,16 @@ body{
 body[data-team="mafia"]{--accent:var(--mafia);--accent-rgb:255,93,102}
 body[data-team="city"]{--accent:var(--city);--accent-rgb:103,168,255}
 body[data-team="neutral"]{--accent:var(--neutral);--accent-rgb:184,145,255}
+body[data-mode="para"]{--accent:#d6b45d;--accent-rgb:214,180,93}
+body[data-team-color="red"]{--accent:#ff5d66;--accent-rgb:255,93,102}
+body[data-team-color="blue"]{--accent:#67a8ff;--accent-rgb:103,168,255}
+body[data-team-color="green"]{--accent:#65d694;--accent-rgb:101,214,148}
+body[data-team-color="yellow"]{--accent:#f0cd63;--accent-rgb:240,205,99}
+body[data-team-color="purple"]{--accent:#b891ff;--accent-rgb:184,145,255}
+body[data-team-color="orange"]{--accent:#f39a55;--accent-rgb:243,154,85}
+body[data-team-color="black"]{--accent:#788395;--accent-rgb:120,131,149}
+body[data-team-color="white"]{--accent:#f1f0e9;--accent-rgb:241,240,233}
+body[data-team-color="brown"]{--accent:#ae765d;--accent-rgb:174,118,93}
 
 button,a{-webkit-tap-highlight-color:transparent}
 button{font:inherit}
@@ -80,6 +90,8 @@ button{font:inherit}
 .result-hero.mafia{background-image:url("{% static 'main/images/gstats/mafia-victory.webp' %}")}
 .result-hero.city{background-image:url("{% static 'main/images/gstats/city-victory.webp' %}")}
 .result-hero.neutral{background-image:url("{% static 'main/images/gstats/neutral-victory.webp' %}")}
+.result-hero.teamgame{background-image:url("{% static 'main/images/gstats/teamgame-victory.webp' %}")}
+.result-hero.para{background-image:url("{% static 'main/images/gstats/para-victory.webp' %}")}
 .result-hero::before{
   content:'';position:absolute;inset:0;
   background:
@@ -87,6 +99,11 @@ button{font:inherit}
     linear-gradient(90deg,rgba(7,8,13,.68),transparent 70%);
 }
 .result-hero::after{content:'';position:absolute;left:20px;right:20px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.45),transparent)}
+.result-hero.teamgame::before{
+  background:
+    linear-gradient(180deg,rgba(7,8,13,.1),rgba(7,8,13,.08) 28%,rgba(7,8,13,.9) 82%,var(--bg)),
+    linear-gradient(90deg,rgba(7,8,13,.72) 0%,rgba(7,8,13,.35) 50%,rgba(var(--accent-rgb),.2) 100%);
+}
 .hero-content{position:relative;z-index:2;width:100%}
 .status-line{display:flex;align-items:center;gap:8px;margin-bottom:13px;font-size:.67rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.68)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 5px rgba(var(--accent-rgb),.12),0 0 16px var(--accent)}
@@ -164,6 +181,10 @@ button{font:inherit}
 .player-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;font-weight:750;letter-spacing:-.015em}
 .player-detail{display:flex;align-items:center;gap:7px;min-width:0;margin-top:5px;color:var(--soft);font-size:.59rem}
 .role-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;color:var(--muted);font-weight:700}
+.team-badge{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;color:var(--muted);font-weight:750}
+.team-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor}
+.team-badge.red{color:#ff5d66}.team-badge.blue{color:#67a8ff}.team-badge.green{color:#65d694}.team-badge.yellow{color:#f0cd63}
+.team-badge.purple{color:#b891ff}.team-badge.orange{color:#f39a55}.team-badge.black{color:#788395}.team-badge.white{color:#f1f0e9}.team-badge.brown{color:#ae765d}
 .mini-stat{display:inline-flex;align-items:center;gap:3px;flex:0 0 auto}
 .mini-stat.kills{color:rgba(255,93,102,.82)}
 .mini-stat.finds{color:rgba(103,168,255,.82)}
@@ -206,6 +227,7 @@ button{font:inherit}
   .shell{padding-left:22px;padding-right:22px}
   .result-hero{min-height:520px;margin-left:0;margin-right:0;border-radius:0 0 30px 30px;padding:120px 54px 46px;background-position:center}
   .result-hero::before{background:linear-gradient(90deg,rgba(7,8,13,.93) 0%,rgba(7,8,13,.52) 45%,rgba(7,8,13,.05) 78%),linear-gradient(0deg,var(--bg),transparent 38%)}
+  .result-hero.teamgame::before{background:linear-gradient(90deg,rgba(7,8,13,.95) 0%,rgba(7,8,13,.57) 47%,rgba(var(--accent-rgb),.18) 100%),linear-gradient(0deg,var(--bg),transparent 38%)}
   .hero-title{font-size:4.5rem;max-width:510px}.hero-copy{font-size:.9rem}.hero-meta{overflow:visible}
   .content-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);gap:24px;align-items:start}
   .roster-section:only-child{grid-column:1/-1}
@@ -219,7 +241,7 @@ button{font:inherit}
 }
 </style>
 </head>
-<body data-team="{% if finished %}{{ winning_team }}{% else %}progress{% endif %}">
+<body data-team="{% if finished %}{{ winning_team }}{% else %}progress{% endif %}" data-mode="{{ result_variant|default:'progress' }}" data-team-color="{{ winning_team_color|default:'' }}">
 
 <header class="topbar">
   <div class="topbar-inner">
@@ -241,10 +263,16 @@ button{font:inherit}
     </div>
   </section>
 {% else %}
-  <section class="result-hero {{ winning_team }}" aria-labelledby="result-title">
+  <section class="result-hero {{ result_variant }}" aria-labelledby="result-title">
     <div class="hero-content">
-      <div class="status-line"><span class="status-dot"></span> O'yin yakunlandi</div>
-      {% if winning_team == 'mafia' %}
+      <div class="status-line"><span class="status-dot"></span> {% if is_team_game %}Teamgame yakunlandi{% elif is_para_game %}Para o'yini yakunlandi{% else %}O'yin yakunlandi{% endif %}</div>
+      {% if is_team_game %}
+        <h1 class="hero-title" id="result-title">Maydon egallandi.<br><span>{{ winning_team_label }} jamoa yutdi.</span></h1>
+        <p class="hero-copy">Jamoaviy kurashda {{ winning_team_label|lower }} tomon ustun keldi. Quyida jamoalar tarkibi, rollar va hal qiluvchi natijalar jamlangan.</p>
+      {% elif is_para_game %}
+        <h1 class="hero-title" id="result-title">Birga kurashdi.<br><span>Para g'olib!</span></h1>
+        <p class="hero-copy">G'olib juftlik barcha raqiblarni ortda qoldirdi. Ularning natijasi, ochilgan rollar va o'yin tafsilotlari quyida.</p>
+      {% elif winning_team == 'mafia' %}
         <h1 class="hero-title" id="result-title">Shahar uxlaydi.<br><span>Mafia yutdi.</span></h1>
         <p class="hero-copy">Tun jamoasi o'yinni o'z nazoratiga oldi. Quyida hal qiluvchi raqamlar va barcha rollar.</p>
       {% elif winning_team == 'neutral' %}
@@ -256,7 +284,7 @@ button{font:inherit}
       {% endif %}
       <div class="hero-meta" aria-label="O'yin ma'lumotlari">
         <span class="meta-pill"><i class="bi bi-people-fill"></i>{{ chat_title }}</span>
-        <span class="meta-pill"><i class="bi bi-controller"></i>{{ game.mode|default:"classic"|title }}</span>
+        <span class="meta-pill"><i class="bi bi-controller"></i>{{ mode_label }}</span>
         <span class="meta-pill"><i class="bi bi-calendar3"></i>{{ played_at|date:"d.m.Y" }}</span>
         <span class="meta-pill"><i class="bi bi-clock"></i>{{ played_at|date:"H:i" }}</span>
       </div>
@@ -268,7 +296,7 @@ button{font:inherit}
     <aside class="summary-column">
       <section class="section" aria-labelledby="summary-title">
         <div class="section-heading">
-          <div><p class="eyebrow">Qisqa natija</p><h2 class="section-title" id="summary-title">O'yin raqamlarda</h2></div>
+          <div><p class="eyebrow">{% if is_team_game %}Jamoalar natijasi{% elif is_para_game %}Juftlik natijasi{% else %}Qisqa natija{% endif %}</p><h2 class="section-title" id="summary-title">O'yin raqamlarda</h2></div>
         </div>
         <div class="score-strip">
           <div class="score-cell"><div class="score-value">{{ end_stats.total_players }}</div><div class="score-label">O'yinchi</div></div>
@@ -300,9 +328,13 @@ button{font:inherit}
       <div class="filter-row" role="group" aria-label="O'yinchilarni filtrlash">
         <button class="filter-btn" type="button" data-filter="all" aria-pressed="true">Barchasi</button>
         <button class="filter-btn" type="button" data-filter="win" aria-pressed="false"><i class="bi bi-trophy-fill"></i>G'oliblar</button>
+        {% if is_team_game %}
+        {% for team_filter in team_filters %}<button class="filter-btn" type="button" data-filter="{{ team_filter.key }}" aria-pressed="false">{{ team_filter.label }} · {{ team_filter.count }}</button>{% endfor %}
+        {% else %}
         <button class="filter-btn" type="button" data-filter="mafia" aria-pressed="false">Mafia</button>
         <button class="filter-btn" type="button" data-filter="city" aria-pressed="false">Shahar</button>
         <button class="filter-btn" type="button" data-filter="neutral" aria-pressed="false">Neytral</button>
+        {% endif %}
       </div>
 
       {% if winners %}
@@ -310,11 +342,11 @@ button{font:inherit}
         <div class="roster-head"><div class="roster-label win"><i class="bi bi-trophy-fill"></i>G'oliblar</div><span class="roster-count">{{ winners|length }}</span></div>
         <div class="player-list">
           {% for p in winners %}
-          <article class="player-card win {{ p.team }}" data-result="win" data-team="{{ p.team }}">
+          <article class="player-card win {{ p.team }}" data-result="win" data-team="{{ p.team }}" data-game-team="{{ p.game_team }}">
             <div class="role-mark {{ p.team }}"><i class="bi {{ p.icon }}"></i></div>
             <div class="player-info">
               <div class="player-name">{{ p.name }}</div>
-              <div class="player-detail"><span class="role-name">{{ p.role }}</span>{% if p.kills %}<span class="mini-stat kills"><i class="bi bi-moon-stars-fill"></i>{{ p.kills }}</span>{% endif %}{% if p.kom_finds %}<span class="mini-stat finds"><i class="bi bi-search"></i>{{ p.kom_finds }}</span>{% endif %}</div>
+              <div class="player-detail"><span class="role-name">{{ p.role }}</span>{% if is_team_game and p.game_team_label %}<span class="team-badge {{ p.game_team }}">{{ p.game_team_label }}</span>{% endif %}{% if p.kills %}<span class="mini-stat kills"><i class="bi bi-moon-stars-fill"></i>{{ p.kills }}</span>{% endif %}{% if p.kom_finds %}<span class="mini-stat finds"><i class="bi bi-search"></i>{{ p.kom_finds }}</span>{% endif %}</div>
             </div>
             <div class="player-result">{% if p.score is not None %}<div class="player-score {% if p.score >= 0 %}pos{% else %}neg{% endif %}">{% if p.score > 0 %}+{% endif %}{{ p.score }}</div>{% else %}<div class="player-score na">— ball</div>{% endif %}<div class="result-name">G'olib</div></div>
           </article>
@@ -328,11 +360,11 @@ button{font:inherit}
         <div class="roster-head"><div class="roster-label lose"><i class="bi bi-x-circle-fill"></i>Mag'lublar</div><span class="roster-count">{{ losers|length }}</span></div>
         <div class="player-list">
           {% for p in losers %}
-          <article class="player-card lose {{ p.team }}" data-result="lose" data-team="{{ p.team }}">
+          <article class="player-card lose {{ p.team }}" data-result="lose" data-team="{{ p.team }}" data-game-team="{{ p.game_team }}">
             <div class="role-mark {{ p.team }}"><i class="bi {{ p.icon }}"></i></div>
             <div class="player-info">
               <div class="player-name">{{ p.name }}</div>
-              <div class="player-detail"><span class="role-name">{{ p.role }}</span>{% if p.kills %}<span class="mini-stat kills"><i class="bi bi-moon-stars-fill"></i>{{ p.kills }}</span>{% endif %}{% if p.kom_finds %}<span class="mini-stat finds"><i class="bi bi-search"></i>{{ p.kom_finds }}</span>{% endif %}</div>
+              <div class="player-detail"><span class="role-name">{{ p.role }}</span>{% if is_team_game and p.game_team_label %}<span class="team-badge {{ p.game_team }}">{{ p.game_team_label }}</span>{% endif %}{% if p.kills %}<span class="mini-stat kills"><i class="bi bi-moon-stars-fill"></i>{{ p.kills }}</span>{% endif %}{% if p.kom_finds %}<span class="mini-stat finds"><i class="bi bi-search"></i>{{ p.kom_finds }}</span>{% endif %}</div>
             </div>
             <div class="player-result">{% if p.score is not None %}<div class="player-score neg">{{ p.score }}</div>{% else %}<div class="player-score na">— ball</div>{% endif %}<div class="result-name">Mag'lub</div></div>
           </article>
@@ -366,7 +398,7 @@ button{font:inherit}
       buttons.forEach(item=>item.setAttribute('aria-pressed',String(item===button)));
       let visible=0;
       cards.forEach(card=>{
-        const show=filter==='all'||card.dataset.result===filter||card.dataset.team===filter;
+        const show=filter==='all'||card.dataset.result===filter||card.dataset.team===filter||card.dataset.gameTeam===filter;
         card.hidden=!show;if(show)visible++;
       });
       groups.forEach(group=>{group.hidden=!group.querySelector('.player-card:not([hidden])')});
