@@ -1,5 +1,7 @@
 import uuid as _uuid
+import logging
 from django.shortcuts import render, get_object_or_404, redirect
+from django.db import DatabaseError
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, Exists, F
 from django.db.models.functions import TruncHour, TruncDay, TruncMonth
 from django.core.paginator import Paginator
@@ -18,6 +20,8 @@ from .models import (
     ChatRoleOrder, GroupMoreSet,
     DarkCoinWallet, BitcoinRate, DarkCoinTransaction,
 )
+
+logger = logging.getLogger(__name__)
 
 # ── Rol tizimlari ──────────────────────────────────────────────────────────────
 # Kalit = botdagi RoleNames qiymati (bazada shu holda saqlanadi)
@@ -101,6 +105,20 @@ def _normalize_role_order(roles):
     if not isinstance(roles, list) or any(role not in valid_roles for role in roles):
         return list(DEFAULT_ROLE_ORDER)
     return (roles[:60] + DEFAULT_ROLE_ORDER[len(roles):60])[:60]
+
+
+def _get_group_max_players(chat_id):
+    """Panel GET so'rovida DB ga yozmasdan limitni xavfsiz o'qiydi."""
+    try:
+        max_players = (
+            GroupMoreSet.objects.filter(chat_id=chat_id)
+            .values_list('max_players', flat=True)
+            .first()
+        )
+    except DatabaseError:
+        logger.exception("GroupMoreSet limitini o'qib bo'lmadi: chat_id=%s", chat_id)
+        return 30
+    return max_players if max_players in MAX_PLAYER_OPTIONS else 30
 
 
 def _validate_role_order(roles):
@@ -860,20 +878,14 @@ def group_dashboard(request):
     )
     balance_obj = GroupBalance.objects.filter(chat_id=tg_chat_id).first()
     balance = balance_obj.balance if balance_obj else 0
-    more_settings, _ = GroupMoreSet.objects.get_or_create(
-        chat_id=tg_chat_id,
-        defaults={'max_players': 30},
-    )
-    if more_settings.max_players not in MAX_PLAYER_OPTIONS:
-        more_settings.max_players = 30
-        more_settings.save(update_fields=['max_players', 'updated_at'])
+    max_players = _get_group_max_players(tg_chat_id)
 
     return render(request, 'bot/group_dashboard.html', {
         'chat': chat,
         'total_games': total_games,
         'active_game': active_game,
         'balance': balance,
-        'max_players': more_settings.max_players,
+        'max_players': max_players,
         'max_player_options': MAX_PLAYER_OPTIONS,
     })
 
@@ -897,13 +909,20 @@ def group_max_players(request):
     ):
         return JsonResponse({'ok': False, 'error': 'invalid_max_players'}, status=400)
 
-    obj, _ = GroupMoreSet.objects.get_or_create(
-        chat_id=request.session['tg_chat_id'],
-        defaults={'max_players': 30},
-    )
-    if obj.max_players != max_players:
-        obj.max_players = max_players
-        obj.save(update_fields=['max_players', 'updated_at'])
+    try:
+        GroupMoreSet.objects.update_or_create(
+            chat_id=request.session['tg_chat_id'],
+            defaults={'max_players': max_players},
+        )
+    except DatabaseError:
+        logger.exception(
+            "GroupMoreSet limitini saqlab bo'lmadi: chat_id=%s",
+            request.session['tg_chat_id'],
+        )
+        return JsonResponse(
+            {'ok': False, 'error': 'settings_storage_unavailable'},
+            status=503,
+        )
     return JsonResponse({'ok': True, 'max_players': max_players})
 
 

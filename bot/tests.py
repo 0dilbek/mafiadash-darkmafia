@@ -1,7 +1,8 @@
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
+from django.db import DatabaseError
 from django.test import RequestFactory, SimpleTestCase
 
 from . import views
@@ -36,6 +37,16 @@ class LargeGameSettingsTests(SimpleTestCase):
             (10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60),
         )
 
+    def test_max_player_read_failure_falls_back_to_30(self):
+        with patch.object(
+            views.GroupMoreSet.objects,
+            'filter',
+            side_effect=DatabaseError('table unavailable'),
+        ):
+            result = views._get_group_max_players(-1001)
+
+        self.assertEqual(result, 30)
+
     def test_max_player_endpoint_rejects_unlisted_value(self):
         request = self.factory.post(
             '/group/max-players/',
@@ -56,17 +67,36 @@ class LargeGameSettingsTests(SimpleTestCase):
             content_type='application/json',
         )
         request.session = {'tg_authenticated': True, 'tg_chat_id': -1001}
-        settings_obj = SimpleNamespace(max_players=30, save=MagicMock())
-
         with patch.object(
             views.GroupMoreSet.objects,
-            'get_or_create',
-            return_value=(settings_obj, False),
-        ):
+            'update_or_create',
+            return_value=(SimpleNamespace(max_players=60), False),
+        ) as update_or_create:
             response = views.group_max_players(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(settings_obj.max_players, 60)
-        settings_obj.save.assert_called_once_with(
-            update_fields=['max_players', 'updated_at']
+        update_or_create.assert_called_once_with(
+            chat_id=-1001,
+            defaults={'max_players': 60},
+        )
+
+    def test_max_player_endpoint_returns_503_on_database_failure(self):
+        request = self.factory.post(
+            '/group/max-players/',
+            data=json.dumps({'max_players': 60}),
+            content_type='application/json',
+        )
+        request.session = {'tg_authenticated': True, 'tg_chat_id': -1001}
+
+        with patch.object(
+            views.GroupMoreSet.objects,
+            'update_or_create',
+            side_effect=DatabaseError('table unavailable'),
+        ):
+            response = views.group_max_players(request)
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            json.loads(response.content)['error'],
+            'settings_storage_unavailable',
         )
