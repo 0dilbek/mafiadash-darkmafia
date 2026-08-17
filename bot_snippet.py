@@ -10,9 +10,9 @@ Ishlash tartibi:
     Bot → GET /api/generate-link/?chat_id=... → Django token yaratadi → URL qaytaradi → Bot tugma ko'rsatadi
 
 Rol tartibi haqida:
-    chat_role_order jadvalidagi roles maydoni RoleNames qiymatlarini saqlaydi.
-    Masalan: ["🤵🏻 Don", "🕵🏼 Komissar katani", "👨🏼 Tinch axoli", ...]
-    Bot rol taqsimlashda shu jadvaldan o'qiydi, yo'q bo'lsa DEFAULT_ROLE_ORDER ishlatadi.
+    chat_role_order jadvalidagi roles maydoni 60 ta RoleNames kalitini saqlaydi.
+    Masalan: ["DON", "KOMISSAR", "DOKTOR", "FUQARO", ...]
+    Eski 30 talik tartib prefiksi saqlangan holda 60 tagacha kengaytiriladi.
 """
 import os
 import logging

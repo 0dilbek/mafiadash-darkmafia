@@ -15,7 +15,7 @@ import json as _json
 from .models import (
     User, BlockedUser, Profile, Transfer, VipUser, Para, Chat, Giveaway,
     Game, GamePlayer, GamePhase, GroupBalance, BlockGroups, AdminLoginToken,
-    ChatRoleOrder,
+    ChatRoleOrder, GroupMoreSet,
     DarkCoinWallet, BitcoinRate, DarkCoinTransaction,
 )
 
@@ -76,14 +76,31 @@ ROLE_TEAMS = {
 
 DEFAULT_ROLE_ORDER = [
     'DON',       'KOMISSAR',  'DOKTOR',    'FUQARO',
-    'FUQARO',    'DAYDI',     'MAFIA',     'KEZUVCHI',
-    'BORI',      'AFSUNGAR',  'KOLDUN',    'SUIDSID',
-    'ADVOKAT',   'QOTIL',     'VAMPIR',    'JANOB',
+    'KOLDUN',    'DAYDI',     'MAFIA',     'KEZUVCHI',
+    'BORI',      'AFSUNGAR',  'FUQARO',    'SUIDSID',
+    'ADVOKAT',   'QOTIL',     'FUQARO',    'JANOB',
     'JURNALIST', 'AFERIST',   'FUQARO',    'SEHRGAR',
     'AFSUNGAR',  'SERJANT',   'MAFIA',     'GAZABDOR',
     'OVCHI',     'BORI',      'MINIOR',    'KIMYOGAR',
     'AFSUNGAR',  'JOKER',
+    'FUQARO',    'BORI',      'AFSUNGAR',  'FUQARO',
+    'MAFIA',     'QOTIL',     'FUQARO',    'AFSUNGAR',
+    'BORI',      'MAFIA',     'FUQARO',    'AFSUNGAR',
+    'FUQARO',    'QOTIL',     'MAFIA',     'FUQARO',
+    'BORI',      'AFSUNGAR',  'FUQARO',    'MAFIA',
+    'FUQARO',    'QOTIL',     'AFSUNGAR',  'FUQARO',
+    'MAFIA',     'BORI',      'FUQARO',    'AFSUNGAR',
+    'FUQARO',    'MAFIA',
 ]
+MAX_PLAYER_OPTIONS = (10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60)
+
+
+def _normalize_role_order(roles):
+    """Eski custom prefiksni saqlab, tartibni aniq 60 elementga moslaydi."""
+    valid_roles = set(ROLE_TEAMS)
+    if not isinstance(roles, list) or any(role not in valid_roles for role in roles):
+        return list(DEFAULT_ROLE_ORDER)
+    return (roles[:60] + DEFAULT_ROLE_ORDER[len(roles):60])[:60]
 
 
 def _validate_role_order(roles):
@@ -843,13 +860,51 @@ def group_dashboard(request):
     )
     balance_obj = GroupBalance.objects.filter(chat_id=tg_chat_id).first()
     balance = balance_obj.balance if balance_obj else 0
+    more_settings, _ = GroupMoreSet.objects.get_or_create(
+        chat_id=tg_chat_id,
+        defaults={'max_players': 30},
+    )
+    if more_settings.max_players not in MAX_PLAYER_OPTIONS:
+        more_settings.max_players = 30
+        more_settings.save(update_fields=['max_players', 'updated_at'])
 
     return render(request, 'bot/group_dashboard.html', {
         'chat': chat,
         'total_games': total_games,
         'active_game': active_game,
         'balance': balance,
+        'max_players': more_settings.max_players,
+        'max_player_options': MAX_PLAYER_OPTIONS,
     })
+
+
+def group_max_players(request):
+    if not _tg_auth_required(request):
+        return HttpResponseForbidden()
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'method_not_allowed'}, status=405)
+
+    try:
+        data = _json.loads(request.body)
+        max_players = data['max_players']
+    except (KeyError, TypeError, ValueError, _json.JSONDecodeError):
+        return JsonResponse({'ok': False, 'error': 'bad_request'}, status=400)
+
+    if (
+        isinstance(max_players, bool)
+        or not isinstance(max_players, int)
+        or max_players not in MAX_PLAYER_OPTIONS
+    ):
+        return JsonResponse({'ok': False, 'error': 'invalid_max_players'}, status=400)
+
+    obj, _ = GroupMoreSet.objects.get_or_create(
+        chat_id=request.session['tg_chat_id'],
+        defaults={'max_players': 30},
+    )
+    if obj.max_players != max_players:
+        obj.max_players = max_players
+        obj.save(update_fields=['max_players', 'updated_at'])
+    return JsonResponse({'ok': True, 'max_players': max_players})
 
 
 def group_chart_data(request):
@@ -885,20 +940,24 @@ def group_role_order(request):
 
     obj, _ = ChatRoleOrder.objects.get_or_create(
         chat_id=tg_chat_id,
-        defaults={'roles': DEFAULT_ROLE_ORDER},
+        defaults={'roles': list(DEFAULT_ROLE_ORDER)},
     )
 
-    valid_roles = set(ROLE_TEAMS.keys())
-    if any(r not in valid_roles for r in obj.roles):
-        obj.roles = DEFAULT_ROLE_ORDER
-        obj.save()
+    valid_roles = set(ROLE_TEAMS)
+    normalized_roles = _normalize_role_order(obj.roles)
+    if normalized_roles != obj.roles:
+        obj.roles = normalized_roles
+        obj.save(update_fields=['roles', 'updated_at'])
 
     if request.method == 'POST':
         try:
             data = _json.loads(request.body)
-            roles = list(data['roles'])
-        except (KeyError, ValueError, _json.JSONDecodeError):
+            roles = data['roles']
+        except (KeyError, TypeError, ValueError, _json.JSONDecodeError):
             return JsonResponse({'ok': False, 'error': 'bad_request'}, status=400)
+
+        if not isinstance(roles, list) or len(roles) != 60:
+            return JsonResponse({'ok': False, 'error': 'roles_must_contain_60_items'}, status=400)
 
         bad = [r for r in roles if r not in valid_roles]
         if bad:

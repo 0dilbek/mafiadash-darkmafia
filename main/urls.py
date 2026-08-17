@@ -12,6 +12,7 @@ urlpatterns = [
     path('group/<uuid:token>/', bot_views.panel_entry,       name='panel_entry'),
     path('group/',              bot_views.group_dashboard,   name='group_dashboard'),
     path('group/roles/',        bot_views.group_role_order,  name='group_role_order'),
+    path('group/max-players/',  bot_views.group_max_players, name='group_max_players'),
 
     # API
     path('api/group-chart/',   bot_views.group_chart_data,   name='group_chart_data'),

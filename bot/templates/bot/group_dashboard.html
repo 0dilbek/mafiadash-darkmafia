@@ -297,6 +297,27 @@ body {
 .settings-text { flex: 1; }
 .settings-text strong { display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); }
 .settings-text span { font-size: 0.74rem; color: var(--muted); margin-top: 2px; display: block; }
+.settings-stack { display: grid; gap: 10px; }
+.max-player-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+}
+.max-player-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.max-player-options { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; }
+.max-player-option {
+    min-height: 38px; border: 1px solid var(--border); border-radius: 9px;
+    background: var(--bg3); color: var(--muted); font: inherit;
+    font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.max-player-option.active {
+    border-color: var(--gold); color: var(--gold-light);
+    background: rgba(212,175,55,.12); box-shadow: 0 0 12px var(--gold-glow);
+}
+.max-player-option:disabled { opacity: .55; cursor: wait; }
+.max-player-status { min-height: 18px; margin-top: 9px; color: var(--muted); font-size: .7rem; }
+.max-player-status.ok { color: #81c784; }
+.max-player-status.err { color: #ef9a9a; }
+@media (max-width: 540px) { .max-player-options { grid-template-columns: repeat(4, 1fr); } }
 
 /* ── Footer ── */
 .footer {
@@ -310,6 +331,7 @@ svg.hidden-defs { position: absolute; width: 0; height: 0; }
 </style>
 </head>
 <body>
+{% csrf_token %}
 <svg class="hidden-defs">
   <defs>
     <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -477,14 +499,33 @@ svg.hidden-defs { position: absolute; width: 0; height: 0; }
 
   <!-- Sozlamalar -->
   <div class="section-title"><i class="bi bi-sliders"></i> Sozlamalar</div>
-  <a href="{% url 'group_role_order' %}" class="settings-link">
-    <div class="settings-icon"><i class="bi bi-person-fill-gear"></i></div>
-    <div class="settings-text">
-      <strong>Rol tartibini sozlash</strong>
-      <span>Har bir o'yinchiga qaysi rol berilishini o'zgartiring</span>
+  <div class="settings-stack">
+    <div class="max-player-card">
+      <div class="max-player-head">
+        <div class="settings-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="settings-text">
+          <strong>Maksimal o'yinchilar</strong>
+          <span>Default 30 · eng ko'pi 60 kishi</span>
+        </div>
+      </div>
+      <div class="max-player-options" id="max-player-options">
+        {% for option in max_player_options %}
+        <button type="button"
+          class="max-player-option{% if option == max_players %} active{% endif %}"
+          data-value="{{ option }}" onclick="setMaxPlayers({{ option }})">{{ option }}</button>
+        {% endfor %}
+      </div>
+      <div class="max-player-status" id="max-player-status"></div>
     </div>
-    <i class="bi bi-chevron-right" style="color:var(--muted);font-size:0.85rem"></i>
-  </a>
+    <a href="{% url 'group_role_order' %}" class="settings-link">
+      <div class="settings-icon"><i class="bi bi-person-fill-gear"></i></div>
+      <div class="settings-text">
+        <strong>Rol tartibini sozlash</strong>
+        <span>4 dan 60 gacha har bir tarkib uchun rol ketma-ketligini o'zgartiring</span>
+      </div>
+      <i class="bi bi-chevron-right" style="color:var(--muted);font-size:0.85rem"></i>
+    </a>
+  </div>
 
   <div class="footer">
     <b>MafiaDash</b> · Guruh boshqaruv paneli
@@ -494,6 +535,35 @@ svg.hidden-defs { position: absolute; width: 0; height: 0; }
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+async function setMaxPlayers(value) {
+    const buttons = [...document.querySelectorAll('.max-player-option')];
+    const status = document.getElementById('max-player-status');
+    buttons.forEach(button => { button.disabled = true; });
+    status.className = 'max-player-status';
+    status.textContent = 'Saqlanmoqda…';
+    try {
+        const response = await fetch('{% url "group_max_players" %}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+            body: JSON.stringify({max_players: value}),
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || 'save_failed');
+        buttons.forEach(button => {
+            button.classList.toggle('active', Number(button.dataset.value) === data.max_players);
+        });
+        status.className = 'max-player-status ok';
+        status.textContent = `✓ Maksimal ${data.max_players} kishi qilib saqlandi`;
+    } catch (error) {
+        status.className = 'max-player-status err';
+        status.textContent = '✗ Saqlashda xatolik yuz berdi';
+    } finally {
+        buttons.forEach(button => { button.disabled = false; });
+    }
+}
+
 // ── Count-up ──
 function animateCount(el, target) {
     if (!target) { el.textContent = '0'; return; }

@@ -696,7 +696,7 @@ class TransfersReportsChat(models.Model):
 class GameSetRoleConfig(models.Model):
     id = models.BigAutoField(primary_key=True)
     chat_id = models.BigIntegerField()
-    player_count = models.IntegerField()  # 4 to 30
+    player_count = models.IntegerField()  # 4 to 60
     roles_count = models.JSONField(default=dict)
     updated_at = models.DateTimeField(auto_now=True)
 
