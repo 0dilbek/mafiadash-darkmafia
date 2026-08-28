@@ -1,0 +1,59 @@
+{% extends 'bot/base.html' %}
+
+{% block title %}Narx sozlamalari — MafiaDash{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-gem me-2" style="color:#71bafa"></i>Narx sozlamalari</h1>
+    <p>Bot do'koni, olmos paketlari, ayirboshlash va faol rol narxlarini boshqaring.</p>
+</div>
+
+{% if storage_error %}
+<div class="tg-card" style="padding:24px;border-color:#6b2020;color:#f07178">
+    <i class="bi bi-database-exclamation me-2"></i>
+    Narxlar jadvali mavjud emas yoki bazaga ulanib bo'lmadi. Avval dashboard migratsiyasini ishga tushiring.
+</div>
+{% else %}
+<form method="post">
+    {% csrf_token %}
+    <div style="display:grid;gap:18px">
+        {% for category in categories %}
+        <section class="tg-card">
+            <div class="tg-card-header">
+                <span class="title"><i class="bi bi-sliders"></i>{{ category.name }}</span>
+                <span>{{ category.items|length }} ta</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0">
+                {% for item in category.items %}
+                <label style="display:block;padding:15px 18px;border-bottom:1px solid #1c2733">
+                    <span style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px">
+                        <span style="font-size:.88rem;color:#d0d9e3">{{ item.label }}</span>
+                        <span class="tg-badge {% if item.currency == 'diamond' %}tg-badge-diamond{% elif item.currency == 'dollar' %}tg-badge-dollar{% else %}tg-badge-win{% endif %}">{{ item.currency_label }}</span>
+                    </span>
+                    <input
+                        class="tg-search"
+                        style="font-weight:700{% if item.error %};border-color:#f44336{% endif %}"
+                        type="number"
+                        min="0"
+                        max="9223372036854775807"
+                        step="1"
+                        name="price_{{ item.key }}"
+                        value="{{ item.amount }}"
+                        required
+                    >
+                    {% if item.error %}<span style="display:block;color:#f07178;font-size:.75rem;margin-top:5px">{{ item.error }}</span>{% endif %}
+                    <span style="display:block;color:#708499;font-size:.7rem;margin-top:5px"><code>{{ item.key }}</code> · default: {{ item.default }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+
+    <div style="position:sticky;bottom:12px;margin-top:20px;padding:12px 16px;background:#232e3cee;border:1px solid #2b3a4a;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:14px;backdrop-filter:blur(8px)">
+        <span style="font-size:.8rem;color:#708499"><i class="bi bi-info-circle me-1"></i>Saqlangan qiymatlar botga darhol ta'sir qiladi.</span>
+        <button type="submit" class="tg-btn" style="white-space:nowrap"><i class="bi bi-check2-circle me-1"></i>Saqlash</button>
+    </div>
+</form>
+{% endif %}
+{% endblock %}

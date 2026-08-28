@@ -811,3 +811,17 @@ class ChatRoleOrder(models.Model):
     class Meta:
         db_table = "chat_role_order"
         managed = True
+
+
+class DiamondPriceSetting(models.Model):
+    """Bot va dashboard birgalikda ishlatadigan global iqtisod narxlari."""
+    key = models.CharField(max_length=100, unique=True)
+    amount = models.BigIntegerField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "diamondpricesetting"
+        managed = False
+
+    def __str__(self):
+        return f"{self.key}: {self.amount}"

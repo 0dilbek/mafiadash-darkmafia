@@ -6,6 +6,7 @@ from django.db import DatabaseError
 from django.test import RequestFactory, SimpleTestCase
 
 from . import views
+from .diamond_prices import MAX_PRICE, PRICE_DEFINITIONS, parse_price_updates
 
 
 class LargeGameSettingsTests(SimpleTestCase):
@@ -100,3 +101,35 @@ class LargeGameSettingsTests(SimpleTestCase):
             json.loads(response.content)['error'],
             'settings_storage_unavailable',
         )
+
+
+class DiamondPriceSettingsTests(SimpleTestCase):
+    def valid_payload(self):
+        return {f"price_{item['key']}": str(item['default']) for item in PRICE_DEFINITIONS}
+
+    def test_current_prices_are_defaults_and_keys_are_unique(self):
+        by_key = {item['key']: item for item in PRICE_DEFINITIONS}
+        self.assertEqual(len(by_key), len(PRICE_DEFINITIONS))
+        self.assertEqual(by_key['diamond_pack_5']['default'], 6000)
+        self.assertEqual(by_key['shop_geroy']['default'], 90)
+        self.assertEqual(by_key['transfer_diamond_commission']['default'], 1)
+        self.assertEqual(by_key['transfer_diamond_giveaway_commission']['default'], 0)
+        self.assertEqual(by_key['transfer_dollar_commission']['default'], 100)
+
+    def test_price_payload_accepts_all_current_defaults(self):
+        values, errors = parse_price_updates(self.valid_payload())
+
+        self.assertFalse(errors)
+        self.assertEqual(values['star_pack_100'], 500)
+
+    def test_price_payload_rejects_missing_negative_and_oversized_values(self):
+        payload = self.valid_payload()
+        payload.pop('price_shop_himoya')
+        payload['price_shop_geroy'] = '-1'
+        payload['price_diamond_pack_5'] = str(MAX_PRICE + 1)
+
+        _, errors = parse_price_updates(payload)
+
+        self.assertIn('shop_himoya', errors)
+        self.assertIn('shop_geroy', errors)
+        self.assertIn('diamond_pack_5', errors)

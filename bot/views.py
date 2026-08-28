@@ -1,7 +1,7 @@
 import uuid as _uuid
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, Exists, F
 from django.db.models.functions import TruncHour, TruncDay, TruncMonth
 from django.core.paginator import Paginator
@@ -19,6 +19,13 @@ from .models import (
     Game, GamePlayer, GamePhase, GroupBalance, BlockGroups, AdminLoginToken,
     ChatRoleOrder, GroupMoreSet,
     DarkCoinWallet, BitcoinRate, DarkCoinTransaction,
+    DiamondPriceSetting,
+)
+from .diamond_prices import (
+    PRICE_DEFINITIONS,
+    ensure_default_prices,
+    group_price_definitions,
+    parse_price_updates,
 )
 
 logger = logging.getLogger(__name__)
@@ -288,6 +295,48 @@ def dashboard_chart_data(request):
         'games': games['values'],
         'players': players['values'],
     })
+
+
+@login_required
+def diamond_price_settings(request):
+    try:
+        ensure_default_prices(DiamondPriceSetting)
+        amounts = dict(DiamondPriceSetting.objects.values_list('key', 'amount'))
+    except DatabaseError:
+        logger.exception("Olmos narxlari jadvalini o'qib bo'lmadi")
+        return render(request, 'bot/diamond_price_settings.html', {
+            'categories': [],
+            'storage_error': True,
+        }, status=503)
+
+    errors = {}
+    if request.method == 'POST':
+        values, errors = parse_price_updates(request.POST)
+        amounts.update(values)
+        if not errors:
+            try:
+                now = timezone.now()
+                with transaction.atomic():
+                    rows = list(DiamondPriceSetting.objects.filter(
+                        key__in=[item['key'] for item in PRICE_DEFINITIONS]
+                    ))
+                    for row in rows:
+                        row.amount = values[row.key]
+                        row.updated_at = now
+                    DiamondPriceSetting.objects.bulk_update(rows, ['amount', 'updated_at'])
+            except DatabaseError:
+                logger.exception("Olmos narxlarini saqlab bo'lmadi")
+                messages.error(request, "Narxlarni saqlashda baza xatosi yuz berdi.")
+            else:
+                messages.success(request, "Narxlar saqlandi. Bot yangi qiymatlarni darhol ishlatadi.")
+                return redirect('diamond_price_settings')
+        else:
+            messages.error(request, "Xato qiymatlarni to'g'rilab qayta saqlang.")
+
+    return render(request, 'bot/diamond_price_settings.html', {
+        'categories': group_price_definitions(amounts, errors),
+        'storage_error': False,
+    }, status=400 if errors else 200)
 
 
 @login_required
