@@ -81,6 +81,12 @@ PRICE_DEFINITIONS = (
     _price("active_role_fuqaro", "👨🏼 Tinch axoli", "Faol rollar", "dollar", 100),
 )
 
+STAR_PACK_KEYS = {count: f"star_pack_{count}" for count in (50, 100, 200, 500, 1000)}
+PRICE_DEFINITIONS += tuple(
+    _price(f"{key}_diamonds", f"Stars paket {index}: olmos", "Telegram Stars", "diamond", count)
+    for index, (count, key) in enumerate(STAR_PACK_KEYS.items(), start=1)
+)
+
 PRICE_DEFINITIONS_BY_KEY = {item["key"]: item for item in PRICE_DEFINITIONS}
 MAX_PRICE = 2**63 - 1
 
@@ -107,7 +113,9 @@ def parse_price_updates(payload):
         except (TypeError, ValueError):
             errors[key] = "Butun son kiriting."
             continue
-        if value < 0:
+        if key.startswith("star_pack_") and value <= 0:
+            errors[key] = "Stars va olmos miqdori 0 dan katta bo'lishi kerak."
+        elif value < 0:
             errors[key] = "Narx manfiy bo'lishi mumkin emas."
         elif value > MAX_PRICE:
             errors[key] = "Narx ruxsat etilgan chegaradan katta."
@@ -121,7 +129,20 @@ def group_price_definitions(amounts, errors=None):
     categories = []
     grouped = {}
     for definition in PRICE_DEFINITIONS:
+        if definition["key"].endswith("_diamonds"):
+            continue
         item = dict(definition)
+        item["min"] = 1 if item["currency"] == "stars" else 0
+        if item["currency"] == "stars":
+            diamond_key = f"{item['key']}_diamonds"
+            diamond_default = PRICE_DEFINITIONS_BY_KEY[diamond_key]["default"]
+            item.update({
+                "label": f"Paket {list(STAR_PACK_KEYS.values()).index(item['key']) + 1}",
+                "diamond_key": diamond_key,
+                "diamonds": amounts.get(diamond_key, diamond_default),
+                "diamond_default": diamond_default,
+                "diamond_error": errors.get(diamond_key),
+            })
         item["amount"] = amounts.get(item["key"], item["default"])
         item["error"] = errors.get(item["key"])
         if item["category"] not in grouped:

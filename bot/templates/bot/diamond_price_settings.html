@@ -11,7 +11,7 @@
 {% if storage_error %}
 <div class="tg-card" style="padding:24px;border-color:#6b2020;color:#f07178">
     <i class="bi bi-database-exclamation me-2"></i>
-    Narxlar jadvali mavjud emas yoki bazaga ulanib bo'lmadi. Avval dashboard migratsiyasini ishga tushiring.
+    Narxlar jadvali mavjud emas yoki bazaga ulanib bo'lmadi. Avval botni qayta ishga tushiring — jadval va default narxlarni botning o'zi yaratadi.
 </div>
 {% else %}
 <form method="post">
@@ -25,16 +25,25 @@
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0">
                 {% for item in category.items %}
-                <label style="display:block;padding:15px 18px;border-bottom:1px solid #1c2733">
+                <div style="display:block;padding:15px 18px;border-bottom:1px solid #1c2733">
                     <span style="display:flex;justify-content:space-between;gap:12px;margin-bottom:8px">
                         <span style="font-size:.88rem;color:#d0d9e3">{{ item.label }}</span>
                         <span class="tg-badge {% if item.currency == 'diamond' %}tg-badge-diamond{% elif item.currency == 'dollar' %}tg-badge-dollar{% else %}tg-badge-win{% endif %}">{{ item.currency_label }}</span>
                     </span>
+                    {% if item.diamond_key %}
+                    <label for="price_{{ item.diamond_key }}" style="display:block;color:#71bafa;font-size:.8rem;margin-bottom:5px">💎 Olmos miqdori</label>
+                    <input class="tg-search" style="font-weight:700;margin-bottom:8px{% if item.diamond_error %};border-color:#f44336{% endif %}"
+                        id="price_{{ item.diamond_key }}" type="number" min="1" max="9223372036854775807" step="1"
+                        name="price_{{ item.diamond_key }}" value="{{ item.diamonds }}" required>
+                    {% if item.diamond_error %}<span style="display:block;color:#f07178;font-size:.75rem;margin-bottom:8px">{{ item.diamond_error }}</span>{% endif %}
+                    {% endif %}
+                    <label for="price_{{ item.key }}" style="display:block;color:#d0d9e3;font-size:.8rem;margin-bottom:5px">{% if item.diamond_key %}⭐ Stars narxi{% else %}{{ item.label }}{% endif %}</label>
                     <input
+                        id="price_{{ item.key }}"
                         class="tg-search"
                         style="font-weight:700{% if item.error %};border-color:#f44336{% endif %}"
                         type="number"
-                        min="0"
+                        min="{{ item.min }}"
                         max="9223372036854775807"
                         step="1"
                         name="price_{{ item.key }}"
@@ -42,8 +51,8 @@
                         required
                     >
                     {% if item.error %}<span style="display:block;color:#f07178;font-size:.75rem;margin-top:5px">{{ item.error }}</span>{% endif %}
-                    <span style="display:block;color:#708499;font-size:.7rem;margin-top:5px"><code>{{ item.key }}</code> · default: {{ item.default }}</span>
-                </label>
+                    <span style="display:block;color:#708499;font-size:.7rem;margin-top:5px">Boshlang‘ich: {% if item.diamond_key %}{{ item.diamond_default }} 💎 / {% endif %}{{ item.default }} {{ item.currency_label }}</span>
+                </div>
                 {% endfor %}
             </div>
         </section>
