@@ -1010,16 +1010,10 @@ def group_role_order(request):
     tg_chat_id = request.session['tg_chat_id']
     chat = Chat.objects.filter(chat_id=tg_chat_id).first()
 
-    obj, _ = ChatRoleOrder.objects.get_or_create(
-        chat_id=tg_chat_id,
-        defaults={'roles': list(DEFAULT_ROLE_ORDER)},
-    )
-
+    obj = ChatRoleOrder.objects.filter(chat_id=tg_chat_id).first()
+    # Opening the editor must never modify a saved order.
+    displayed_roles = _normalize_role_order(obj.roles if obj else [])
     valid_roles = set(ROLE_TEAMS)
-    normalized_roles = _normalize_role_order(obj.roles)
-    if normalized_roles != obj.roles:
-        obj.roles = normalized_roles
-        obj.save(update_fields=['roles', 'updated_at'])
 
     if request.method == 'POST':
         try:
@@ -1039,21 +1033,21 @@ def group_role_order(request):
         if errs:
             return JsonResponse({'ok': False, 'errors': errs}, status=422)
 
-        obj.roles = roles
-        obj.save()
+        ChatRoleOrder.objects.update_or_create(
+            chat_id=tg_chat_id, defaults={'roles': roles},
+        )
         return JsonResponse({'ok': True})
 
     role_names_map = {k: getattr(RoleNames, k) for k in ROLE_TEAMS}
     role_data = [
         {'key': r, 'name': getattr(RoleNames, r, r), 'team': ROLE_TEAMS.get(r, 'unknown')}
-        for r in obj.roles
+        for r in displayed_roles
     ]
     return render(request, 'bot/group_role_order.html', {
         'chat': chat,
         'role_data': role_data,
-        'roles_json': _json.dumps(obj.roles),
+        'roles_json': _json.dumps(displayed_roles),
         'default_roles_json': _json.dumps(DEFAULT_ROLE_ORDER),
         'role_teams_json': _json.dumps(ROLE_TEAMS),
         'role_names_json': _json.dumps(role_names_map),
-        'role_options': list(role_names_map.items()),
     })

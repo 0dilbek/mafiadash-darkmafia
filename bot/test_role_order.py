@@ -55,13 +55,38 @@ class RoleOrderViewTests(TestCase):
             query.return_value.first.return_value = SimpleNamespace(title='Test group')
             return views.group_role_order(request)
 
-    def test_custom_order_without_fitnachi_offers_role_selector(self):
-        ChatRoleOrder.objects.create(chat_id=-1001, roles=list(migration.LEGACY_ORDER))
+    def test_opening_editor_preserves_saved_order_without_selects(self):
+        roles = list(views.DEFAULT_ROLE_ORDER)
+        roles[4], roles[18] = roles[18], roles[4]
+        row = ChatRoleOrder.objects.create(chat_id=-1001, roles=roles)
+        timestamp = row.updated_at
         response = self.render_view(self.request())
         html = response.content.decode().split('<script')[0]
-        self.assertEqual(html.count('class="role-label role-select"'), 60)
-        self.assertContains(response, '<option value="FITNACHI">', count=60)
-        self.assertContains(response, '19 kishidan boshlab chiqadi')
+        self.assertEqual(html.count('class="role-label"'), 60)
+        self.assertNotIn('<select', html)
+        self.assertContains(response, '<span class="role-label">😈 Fitnachi</span>', count=1)
+        row.refresh_from_db()
+        self.assertEqual(row.roles, roles)
+        self.assertEqual(row.updated_at, timestamp)
+
+    def test_first_visit_displays_default_with_fitnachi_without_writing(self):
+        response = self.render_view(self.request())
+        self.assertContains(response, 'data-role="FITNACHI"', count=1)
+        self.assertEqual(views.DEFAULT_ROLE_ORDER[18], 'FITNACHI')
+        self.assertFalse(ChatRoleOrder.objects.exists())
+
+    def test_opening_legacy_or_invalid_order_never_overwrites_storage(self):
+        for roles in (list(migration.LEGACY_ORDER[:30]), ['UNKNOWN_ROLE'], []):
+            with self.subTest(roles=roles):
+                row, _ = ChatRoleOrder.objects.update_or_create(chat_id=-1001, defaults={'roles': roles})
+                timestamp = row.updated_at
+                response = self.render_view(self.request())
+                self.assertEqual(response.status_code, 200)
+                html = response.content.decode().split('<script')[0]
+                self.assertEqual(html.count('class="role-label"'), 60)
+                row.refresh_from_db()
+                self.assertEqual(row.roles, roles)
+                self.assertEqual(row.updated_at, timestamp)
 
     def test_saves_fitnachi_in_an_earlier_position(self):
         roles = list(views.DEFAULT_ROLE_ORDER)
@@ -72,6 +97,7 @@ class RoleOrderViewTests(TestCase):
         self.assertEqual(ChatRoleOrder.objects.get(chat_id=-1001).roles, roles)
 
     def test_duplicate_fitnachi_does_not_overwrite_saved_order(self):
+        ChatRoleOrder.objects.create(chat_id=-1001, roles=list(views.DEFAULT_ROLE_ORDER))
         roles = list(views.DEFAULT_ROLE_ORDER)
         roles[4] = 'FITNACHI'
         response = self.render_view(self.request(roles))
