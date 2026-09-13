@@ -8,14 +8,14 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .cinema_models import (
-    CinemaChannel, CinemaJoinRequest, CinemaMovie, CinemaPlan, CinemaPurchase, CinemaSubscription,
+    CinemaChannel, CinemaJoinRequest, CinemaMovie, CinemaPlan, CinemaPurchase, CinemaSubscription, CinemaViewer,
 )
 from .models import Profile, User
 
 
 class CinemaDashboardTests(TransactionTestCase):
     shared_models = [User, Profile, CinemaMovie, CinemaChannel, CinemaJoinRequest,
-                     CinemaPlan, CinemaSubscription, CinemaPurchase]
+                     CinemaPlan, CinemaSubscription, CinemaPurchase, CinemaViewer]
 
     def setUp(self):
         # managed=False mirrors the bot's tables; Django migrations don't create them.
@@ -34,9 +34,7 @@ class CinemaDashboardTests(TransactionTestCase):
     def test_anonymous_and_telegram_only_sessions_cannot_access_cinema(self):
         self.client.logout()
         movie = CinemaMovie.objects.create(code="42", file_id="file")
-        urls = [reverse("cinema"), reverse("cinema_movie_add"),
-                reverse("cinema_movie_edit", args=[movie.pk]),
-                reverse("cinema_movie_delete", args=[movie.pk])]
+        urls = [reverse("cinema")]
         for telegram_session in (False, True):
             if telegram_session:
                 session = self.client.session
@@ -81,6 +79,7 @@ class CinemaDashboardTests(TransactionTestCase):
                 self.assertEqual(response.status_code, 400)
                 self.plan.refresh_from_db()
                 self.assertEqual((self.plan.price_diamonds, self.plan.duration_days), (100, 30))
+                self.assertEqual(response.context['plan'].price_diamonds, 100)
 
     def test_all_tabs_render_shared_records_and_ignore_unpaid_offers_in_revenue(self):
         user = User.objects.create(user_id=777, full_name="Viewer", mention="Viewer")
@@ -102,28 +101,70 @@ class CinemaDashboardTests(TransactionTestCase):
                     self.assertContains(response, "123 💎")
                     self.assertContains(response, reverse("user_detail", args=[user.id]))
 
-    def test_movie_normalization_edit_and_delete_confirmation(self):
-        response = self.client.post(reverse("cinema_movie_add"), {"code": " Kino_42 ", "file_id": "file", "message_text": "Kino"})
-        self.assertEqual(response.status_code, 302)
-        movie = CinemaMovie.objects.get(code="kino_42")
-        CinemaMovie.objects.filter(pk=movie.pk).update(request_count=8)
-        response = self.client.post(reverse("cinema_movie_edit", args=[movie.pk]), {"code": "NEW", "file_id": "newfile", "message_text": "New"})
-        self.assertEqual(response.status_code, 302)
+    def test_movies_are_read_only_and_old_mutation_urls_are_gone(self):
+        movie = CinemaMovie.objects.create(code="42", file_id="file", request_count=8)
+        response = self.client.get(reverse("cinema"), {"tab": "movies"})
+        self.assertContains(response, "42")
+        for forbidden in ("Kino qo'shish", "Tahrirlash", "O'chirish", "/movies/add/"):
+            self.assertNotContains(response, forbidden)
+        for path in ("/panel/cinema/movies/add/", f"/panel/cinema/movies/{movie.pk}/",
+                     f"/panel/cinema/movies/{movie.pk}/delete/"):
+            for method in (self.client.get, self.client.post):
+                self.assertEqual(method(path).status_code, 404)
         movie.refresh_from_db()
-        self.assertEqual((movie.code, movie.request_count), ("new", 8))
-        delete_url = reverse("cinema_movie_delete", args=[movie.pk])
-        self.assertEqual(self.client.get(delete_url).status_code, 200)
-        self.assertTrue(CinemaMovie.objects.filter(pk=movie.pk).exists())
-        self.assertEqual(self.client.post(delete_url).status_code, 302)
-        self.assertFalse(CinemaMovie.objects.filter(pk=movie.pk).exists())
+        self.assertEqual((movie.code, movie.request_count), ("42", 8))
 
-    def test_duplicate_movie_code_rejected_and_csrf_required(self):
-        CinemaMovie.objects.create(code="42", file_id="file")
-        response = self.client.post(reverse("cinema_movie_add"), {"code": "42", "file_id": "other"})
-        self.assertEqual(response.status_code, 400)
+    def test_settings_still_require_csrf(self):
         strict = Client(enforce_csrf_checks=True)
         strict.force_login(self.admin)
         self.assertEqual(strict.post(reverse("cinema"), {"price_diamonds": 1, "duration_days": 1}).status_code, 403)
+
+    def test_audience_includes_free_and_legacy_visitors_without_mafia_only_users(self):
+        regular = User.objects.create(user_id=1001, full_name="Regular", mention="Regular")
+        CinemaViewer.objects.create(user=regular, last_seen_at=timezone.now())
+        legacy = User.objects.create(user_id=1002, full_name="Legacy", mention="Legacy")
+        # Even an unpaid offer proves Cinema usage, but is not a premium subscription.
+        CinemaPurchase.objects.create(user=legacy, price_diamonds=100, duration_days=30, valid_until=timezone.now())
+        paid = User.objects.create(user_id=1003, full_name="Paid", mention="Paid")
+        CinemaViewer.objects.create(user=paid, last_seen_at=timezone.now())
+        CinemaSubscription.objects.create(user=paid, expires_at=timezone.now() + timedelta(days=2))
+        User.objects.create(user_id=1004, full_name="Mafia only", mention="Mafia")
+        response = self.client.get(reverse("cinema"))
+        self.assertEqual(response.context["viewer_count"], 3)
+        self.assertEqual(response.context["active_count"], 1)
+        self.assertEqual(response.context["page_obj"].paginator.count, 3)
+        self.assertContains(response, "Regular")
+        self.assertContains(response, "Legacy")
+        self.assertNotContains(response, "Mafia only")
+        self.assertEqual(next(row.balance for row in response.context["rows"] if row.pk == regular.pk), 0)
+        premium = self.client.get(reverse("cinema"), {"access": "premium"})
+        self.assertEqual([row.pk for row in premium.context["rows"]], [paid.pk])
+        standard = self.client.get(reverse("cinema"), {"access": "standard", "q": "1001"})
+        self.assertEqual([row.pk for row in standard.context["rows"]], [regular.pk])
+        self.assertEqual(standard.context["viewer_count"], 3)
+
+    def test_expired_subscriptions_are_in_total_but_not_active_count(self):
+        user = User.objects.create(user_id=998, mention="Expired")
+        CinemaSubscription.objects.create(user=user, expires_at=timezone.now() - timedelta(seconds=1))
+        response = self.client.get(reverse("cinema"), {"access": "standard"})
+        self.assertEqual(response.context["viewer_count"], 1)
+        self.assertEqual(response.context["active_count"], 0)
+        self.assertEqual(response.context["page_obj"].paginator.count, 1)
+
+    def test_missing_viewer_migration_shows_legacy_data_and_notice(self):
+        user = User.objects.create(user_id=999, full_name="Legacy", mention="Legacy")
+        CinemaSubscription.objects.create(user=user, expires_at=timezone.now() + timedelta(days=1))
+        with connection.schema_editor() as editor:
+            editor.delete_model(CinemaViewer)
+        try:
+            response = self.client.get(reverse("cinema"))
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.context["viewer_count"], 1)
+            self.assertContains(response, "Foydalanuvchilar hisobi hali yoqilmagan")
+            self.assertContains(response, "Legacy")
+        finally:
+            with connection.schema_editor() as editor:
+                editor.create_model(CinemaViewer)
 
     def test_missing_schema_gives_actionable_page(self):
         from django.db import OperationalError

@@ -1,6 +1,6 @@
 """Django mappings of Dark Cinema's Tortoise models, sharing the same database.
 
-Schema owner: dark cinema bot/app/models and migrations/001..003.
+Schema owner: dark cinema bot/app/models and migrations/001..004.
 Keep field names, types and db_table in sync; Django must not create these tables.
 """
 import uuid
@@ -21,6 +21,17 @@ class CinemaMovie(models.Model):
         managed = False
         db_table = "cinema_movie"
         ordering = ["-created_at"]
+
+
+class CinemaViewer(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    user = models.OneToOneField("bot.User", related_name="cinema_viewer", on_delete=models.CASCADE)
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = "cinema_viewer"
 
 
 class CinemaChannel(models.Model):

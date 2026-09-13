@@ -828,4 +828,4 @@ class DiamondPriceSetting(models.Model):
 
 
 # Shared Dark Cinema tables (schema is owned by the cinema bot).
-from .cinema_models import (CinemaMovie, CinemaChannel, CinemaJoinRequest, CinemaPlan, CinemaSubscription, CinemaPurchase)
+from .cinema_models import (CinemaViewer, CinemaMovie, CinemaChannel, CinemaJoinRequest, CinemaPlan, CinemaSubscription, CinemaPurchase)

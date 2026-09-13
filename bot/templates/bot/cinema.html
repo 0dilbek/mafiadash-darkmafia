@@ -1,85 +1,91 @@
 {% extends 'bot/base.html' %}
 {% block title %}Dark Cinema — MafiaDash{% endblock %}
+{% block extra_css %}<style>{% include 'bot/includes/cinema_styles.html' %}</style>{% endblock %}
 {% block content %}
-<div class="page-header"><h1><i class="bi bi-film"></i> Dark Cinema</h1><p>Kinolar, kanallar va olmosga olinadigan obunalar.</p></div>
-{% if storage_error %}
-<div class="alert alert-warning">Cinema ma'lumotlari hozir mavjud emas. Bazaga ulanish va Cinema bot migratsiyalarini tekshiring.</div>
-{% else %}
-<div class="row g-3 mb-4">
-    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ movie_count }}</div><div class="label">Kinolar</div></div></div>
-    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ channel_count }}</div><div class="label">Majburiy kanallar</div></div></div>
-    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ active_count }}</div><div class="label">Faol obunachilar</div></div></div>
-    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ revenue }} 💎</div><div class="label">Obunalardan tushgan olmos</div></div></div>
-</div>
-<nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Cinema menyusi">
-    <a class="btn {% if tab == 'settings' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=settings">Obuna sozlamalari</a>
-    <a class="btn {% if tab == 'movies' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=movies">Kinolar</a>
-    <a class="btn {% if tab == 'channels' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=channels">Kanallar</a>
-    <a class="btn {% if tab == 'subscriptions' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=subscriptions">Obunachilar</a>
-    <a class="btn {% if tab == 'purchases' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=purchases">Xaridlar</a>
-</nav>
-{% if tab == 'settings' %}
-<div class="tg-card p-4" style="max-width:720px">
-    <h2 class="h5">Kanallarga qo'shilmasdan kino ko'rish</h2>
-    <p>To'lov foydalanuvchining Mafia botdagi olmos balansidan bir marta olinadi. Faol obuna davomida majburiy kanallarga qo'shilish talab qilinmaydi.</p>
-    <form method="post" action="{% url 'cinema' %}">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}
-        <div class="mb-3">
-            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label><br>
-            {{ field }}
-            {% for error in field.errors %}<div class="text-danger" role="alert">{{ error }}</div>{% endfor %}
-        </div>
-        {% endfor %}
-        <button class="btn btn-primary" type="submit">Saqlash</button>
-    </form>
-    <p class="mt-3 mb-0">O'zgarishlar yangi xaridlarga amal qiladi. Oldin sotib olingan obunalarning muddati saqlanadi. Savdoni o'chirish faol obunalarni bekor qilmaydi.</p>
-</div>
-{% else %}
-<div class="d-flex flex-wrap gap-3 justify-content-between mb-3">
-    {% if tab != 'channels' %}
-    <form method="get" class="d-flex gap-2">
-        <input type="hidden" name="tab" value="{{ tab }}">
-        <input class="form-control" type="search" name="q" value="{{ q }}" aria-label="Qidirish" placeholder="{% if tab == 'movies' %}Kino kodi yoki matni{% else %}Ism yoki Telegram ID{% endif %}">
-        <button class="btn btn-outline-light" type="submit">Qidirish</button>
-    </form>
-    {% endif %}
-    {% if tab == 'movies' %}<a class="btn btn-primary" href="{% url 'cinema_movie_add' %}">+ Kino qo'shish</a>{% endif %}
-</div>
-{% if tab == 'channels' %}<p>Kanallarni qo'shish, rejimini almashtirish va o'chirish Cinema botning admin panelida bajariladi. Zayavka soni bot qayd etgan so'rovlarni bildiradi.</p>{% endif %}
-<div class="tg-card"><div class="tg-table-wrap"><table class="tg-table">
-    <thead><tr>
-    {% if tab == 'movies' %}<th>Kod</th><th>Matn</th><th>So'rovlar</th><th>Amallar</th>
-    {% elif tab == 'channels' %}<th>Kanal</th><th>ID</th><th>Rejim</th><th>Zayavkalar</th>
-    {% elif tab == 'subscriptions' %}<th>Foydalanuvchi</th><th>Balans</th><th>Muddati</th><th>Holati</th>
-    {% else %}<th>Foydalanuvchi</th><th>To'langan olmos</th><th>Muddat</th><th>To'lov vaqti</th>{% endif %}
-    </tr></thead>
-    <tbody>
-    {% for row in rows %}<tr>
-    {% if tab == 'movies' %}
-        <td><code>{{ row.code }}</code></td><td>{{ row.message_text|truncatechars:90 }}</td><td>{{ row.request_count }}</td>
-        <td><a href="{% url 'cinema_movie_edit' row.pk %}">Tahrirlash</a> · <a href="{% url 'cinema_movie_delete' row.pk %}">O'chirish</a></td>
-    {% elif tab == 'channels' %}
-        <td><a href="{{ row.invite_link }}" target="_blank" rel="noopener noreferrer">{{ row.title }}</a></td><td>{{ row.chat_id }}</td>
-        <td>{% if row.accepts_join_requests %}Zayavka yoki a'zolik{% else %}A'zolik{% endif %}</td><td>{{ row.request_total }}</td>
-    {% elif tab == 'subscriptions' %}
-        <td><a href="{% url 'user_detail' row.user.id %}">{{ row.user.full_name|default:row.user.user_id }}</a><br><small>{{ row.user.user_id }}</small></td>
-        <td>{{ row.user.profile.diamond|default:0 }} 💎</td><td>{{ row.expires_at|date:'d.m.Y H:i' }}</td><td>{% if row.expires_at > now %}Faol{% else %}Tugagan{% endif %}</td>
+<section class="cinema">
+    <header class="cm-heading">
+        <div class="cm-brand"><div class="cm-brand-icon"><i class="bi bi-film" aria-hidden="true"></i></div><div><h1>Dark Cinema</h1><p>Bot auditoriyasi va obunalar boshqaruvi</p></div></div>
+        {% if not storage_error %}<span class="cm-badge {% if plan.is_enabled %}cm-badge--green{% endif %}"><span class="cm-dot"></span>{% if plan.is_enabled %}Pulli obuna savdosi ochiq{% else %}Pulli obuna savdosi yopiq{% endif %}</span>{% endif %}
+    </header>
+    {% if storage_error %}
+    <div class="cm-panel"><div class="cm-empty"><div class="cm-empty-icon"><i class="bi bi-exclamation-circle"></i></div><h3>Ma'lumotlarni yuklab bo'lmadi</h3><p>Bazaga ulanish va Cinema bot migratsiyalarini tekshiring.</p><a href="{% url 'cinema' %}" class="cm-button cm-button--quiet" style="margin-top:20px">Qayta urinish</a></div></div>
     {% else %}
-        <td><a href="{% url 'user_detail' row.user.id %}">{{ row.user.full_name|default:row.user.user_id }}</a><br><small>{{ row.user.user_id }}</small></td>
-        <td>{{ row.price_diamonds }} 💎</td><td>{{ row.duration_days }} kun</td><td>{{ row.paid_at|date:'d.m.Y H:i' }}</td>
+    <div class="cm-stats">
+        <div class="cm-stat"><div class="cm-stat-label">Jami obunachilar<i class="bi bi-people"></i></div><div class="cm-stat-value">{{ viewer_count }}</div><div class="cm-stat-foot">Cinema bot foydalanuvchilari</div></div>
+        <div class="cm-stat"><div class="cm-stat-label">Faol pulli obunalar<i class="bi bi-gem"></i></div><div class="cm-stat-value">{{ active_count }}</div><div class="cm-stat-foot">Kanallarga qo'shilish talab etilmaydi</div></div>
+        <div class="cm-stat"><div class="cm-stat-label">Kinolar<i class="bi bi-collection-play"></i></div><div class="cm-stat-value">{{ movie_count }}</div><div class="cm-stat-foot">Bot kutubxonasida</div></div>
+        <div class="cm-stat"><div class="cm-stat-label">Jami tushum<i class="bi bi-graph-up"></i></div><div class="cm-stat-value">{{ revenue }} <span style="font-size:20px;color:#9cc7ff">💎</span></div><div class="cm-stat-foot">{{ purchase_count }} ta yakunlangan xarid</div></div>
+    </div>
+    <nav class="cm-tabs" aria-label="Cinema menyusi">
+        {% for key,label,icon,count in tabs %}<a class="cm-tab {% if tab == key %}is-active{% endif %}" href="?tab={{ key }}" {% if tab == key %}aria-current="page"{% endif %}><i class="bi bi-{{ icon }}" aria-hidden="true"></i>{{ label }}{% if count != None %}<span class="cm-tab-count">{{ count }}</span>{% endif %}</a>{% endfor %}
+    </nav>
+    {% if not tracking_available %}<div class="cm-note" role="status">Foydalanuvchilar hisobi hali yoqilmagan. Hozir avvalgi Cinema xarid va obuna ma'lumotlarida bor foydalanuvchilar ko'rsatilmoqda. To'liq hisob uchun bot yangilanishi va migratsiyasini ishga tushiring.</div>{% endif %}
+    {% if tab == 'settings' %}
+    <div class="cm-settings">
+        <section class="cm-panel">
+            <div class="cm-panel-head"><div><h2>Pulli obuna sozlamalari</h2><p>Obuna narxi, muddati va savdo holatini boshqaring.</p></div><i class="bi bi-sliders cm-muted"></i></div>
+            <form method="post" action="{% url 'cinema' %}?tab=settings" class="cm-form">
+                {% csrf_token %}{{ form.non_field_errors }}
+                <div class="cm-fields">
+                    <div><label for="{{ form.price_diamonds.id_for_label }}" class="cm-label">Obuna narxi · 💎 olmos</label>{{ form.price_diamonds }}<span class="cm-help">Balansdan bir marta yechiladi.</span>{{ form.price_diamonds.errors }}</div>
+                    <div><label for="{{ form.duration_days.id_for_label }}" class="cm-label">Amal qilish muddati · kun</label>{{ form.duration_days }}<span class="cm-help">Xarid qilingan vaqtdan boshlab.</span>{{ form.duration_days.errors }}</div>
+                </div>
+                <label class="cm-toggle" for="{{ form.is_enabled.id_for_label }}"><span><strong>Pulli obuna savdosi</strong><span class="cm-help">Yangi obunalarni sotib olishga ruxsat berish</span></span>{{ form.is_enabled }}</label>{{ form.is_enabled.errors }}
+                <div class="cm-form-footer"><span>O'zgarishlar faqat yangi xaridlarga amal qiladi.</span><button type="submit" class="cm-button"><i class="bi bi-check2"></i>Sozlamalarni saqlash</button></div>
+            </form>
+        </section>
+        <aside class="cm-panel cm-preview">
+            <div class="cm-eyebrow">Amaldagi tarif</div>
+            <div class="cm-preview-price">{{ plan.price_diamonds }} 💎 <small>/ {{ plan.duration_days }} kun</small></div>
+            <p>Obuna davomida foydalanuvchi majburiy kanallarga qo'shilmasdan kinolarni oladi.</p>
+            <div class="cm-benefit"><i class="bi bi-check2-circle"></i>Barcha kinolarga kirish</div>
+            <div class="cm-benefit"><i class="bi bi-check2-circle"></i>Mafia bot bilan umumiy olmos balansi</div>
+            <div class="cm-benefit"><i class="bi bi-check2-circle"></i>Avtomatik uzaytirishsiz, bir martalik to'lov</div>
+            <p style="margin-bottom:0">Savdo yopilganda ham sotib olingan obunalar muddati tugaguncha ishlaydi.</p>
+        </aside>
+    </div>
+    {% else %}
+    <section class="cm-panel">
+        <div class="cm-panel-head"><div>
+            {% if tab == 'subscriptions' %}<h2>Bot obunachilari</h2><p>Botdan foydalanganlar va ularning pulli obuna holati.</p>
+            {% elif tab == 'movies' %}<h2>Kino kutubxonasi</h2><p>Kinolarni botning admin panelida boshqarasiz.</p>
+            {% elif tab == 'channels' %}<h2>Majburiy obuna kanallari</h2><p>Kanal sozlamalari botda boshqariladi. So'rovlar — bot qayd etgan zayavkalar.</p>
+            {% else %}<h2>Xaridlar tarixi</h2><p>Olmos yechilgan, muvaffaqiyatli yakunlangan xaridlar.</p>{% endif %}
+        </div><span class="cm-badge">{{ page_obj.paginator.count }} ta</span></div>
+        <form method="get" class="cm-toolbar" role="search">
+            <input type="hidden" name="tab" value="{{ tab }}">
+            <div class="cm-search"><i class="bi bi-search" aria-hidden="true"></i><input class="cm-input" type="search" name="q" value="{{ q }}" aria-label="Qidirish" placeholder="{% if tab == 'movies' %}Kino kodi yoki nomi{% elif tab == 'channels' %}Kanal nomi{% else %}Ism yoki Telegram ID{% endif %}"></div>
+            {% if tab == 'subscriptions' %}<select name="access" class="cm-select" aria-label="Obuna holati"><option value="all" {% if access == 'all' %}selected{% endif %}>Barcha obunachilar</option><option value="premium" {% if access == 'premium' %}selected{% endif %}>Faol pulli obuna</option><option value="standard" {% if access == 'standard' %}selected{% endif %}>Oddiy foydalanuvchilar</option></select>{% endif %}
+            <button type="submit" class="cm-button cm-button--quiet">Qidirish</button>
+            {% if q or access != 'all' %}<a class="cm-button cm-button--quiet" href="?tab={{ tab }}" aria-label="Filtrlarni tozalash"><i class="bi bi-x-lg"></i></a>{% endif %}
+        </form>
+        <div class="cm-table-wrap"><table class="cm-table">
+            <thead><tr>
+            {% if tab == 'subscriptions' %}<th>Foydalanuvchi</th><th>Balans</th><th>Obuna holati</th><th>Oxirgi faollik</th>
+            {% elif tab == 'movies' %}<th>Kod</th><th>Kino</th><th class="cm-right">So'rovlar</th><th>Qo'shilgan sana</th>
+            {% elif tab == 'channels' %}<th>Kanal</th><th>Kanal ID</th><th>Obuna turi</th><th class="cm-right">Zayavkalar</th>
+            {% else %}<th>Foydalanuvchi</th><th>To'lov</th><th>Obuna muddati</th><th>Xarid vaqti</th>{% endif %}
+            </tr></thead>
+            <tbody>
+            {% for row in rows %}<tr>
+            {% if tab == 'subscriptions' %}
+                <td><div class="cm-person"><span class="cm-avatar">{{ row.full_name|default:'?'|first|upper }}</span><div><a href="{% url 'user_detail' row.id %}">{{ row.full_name|default:row.user_id }}</a><small>{{ row.user_id }}</small></div></div></td>
+                <td class="cm-number cm-diamond">{{ row.balance }} 💎</td>
+                <td>{% if row.premium_expires_at > now %}<span class="cm-badge cm-badge--green"><span class="cm-dot"></span>Pulli obuna</span><span class="cm-secondary">{{ row.premium_expires_at|date:'d.m.Y H:i' }} gacha</span>{% else %}<span class="cm-badge">Oddiy</span>{% if row.premium_expires_at %}<span class="cm-secondary">Pulli obuna tugagan</span>{% endif %}{% endif %}</td>
+                <td class="cm-number cm-muted">{{ row.last_seen_at|date:'d.m.Y H:i'|default:'—' }}</td>
+            {% elif tab == 'movies' %}
+                <td><span class="cm-code">{{ row.code }}</span></td><td class="cm-caption">{{ row.message_text|default:'Kino nomi kiritilmagan'|truncatechars:110 }}</td><td class="cm-right cm-number">{{ row.request_count }}</td><td class="cm-muted cm-number">{{ row.created_at|date:'d.m.Y' }}</td>
+            {% elif tab == 'channels' %}
+                <td><div class="cm-person"><span class="cm-avatar"><i class="bi bi-broadcast"></i></span><a href="{{ row.invite_link }}" target="_blank" rel="noopener noreferrer">{{ row.title }} <i class="bi bi-arrow-up-right" style="font-size:10px"></i></a></div></td><td class="cm-muted cm-number">{{ row.chat_id }}</td><td><span class="cm-badge {% if row.accepts_join_requests %}cm-badge--blue{% endif %}">{% if row.accepts_join_requests %}Zayavka yoki a'zolik{% else %}A'zolik{% endif %}</span></td><td class="cm-right cm-number">{{ row.request_total }}</td>
+            {% else %}
+                <td><div class="cm-person"><span class="cm-avatar">{{ row.user.full_name|default:'?'|first|upper }}</span><div><a href="{% url 'user_detail' row.user.id %}">{{ row.user.full_name|default:row.user.user_id }}</a><small>{{ row.user.user_id }}</small></div></div></td><td class="cm-number cm-diamond">{{ row.price_diamonds }} 💎</td><td>{{ row.duration_days }} kun</td><td class="cm-muted cm-number">{{ row.paid_at|date:'d.m.Y H:i' }}</td>
+            {% endif %}
+            </tr>{% empty %}<tr><td colspan="4"><div class="cm-empty"><div class="cm-empty-icon"><i class="bi {% if q or access != 'all' %}bi-search{% elif tab == 'movies' %}bi-film{% elif tab == 'subscriptions' %}bi-people{% else %}bi-inbox{% endif %}"></i></div><h3>{% if q or access != 'all' %}Mos natija topilmadi{% else %}Hozircha ma'lumot yo'q{% endif %}</h3><p>{% if q or access != 'all' %}Qidiruv yoki obuna filtrini o'zgartirib ko'ring.{% elif tab == 'subscriptions' %}Foydalanuvchilar botga yozishi bilan shu yerda ko'rinadi.{% elif tab == 'movies' %}Botga qo'shilgan kinolar shu ro'yxatda paydo bo'ladi.{% elif tab == 'purchases' %}Birinchi pulli obuna xaridi shu yerda ko'rinadi.{% else %}Bot orqali qo'shilgan kanallar shu yerda ko'rinadi.{% endif %}</p></div></td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+        <footer class="cm-pagination"><span>{% if page_obj.paginator.count %}{{ page_obj.start_index }}–{{ page_obj.end_index }} / {{ page_obj.paginator.count }} ta{% else %}0 ta natija{% endif %}</span><div class="cm-pagination-links">{% if page_obj.has_previous %}<a class="cm-button cm-button--quiet" href="?tab={{ tab }}&amp;q={{ q|urlencode }}&amp;access={{ access }}&amp;page={{ page_obj.previous_page_number }}" aria-label="Oldingi sahifa"><i class="bi bi-chevron-left"></i></a>{% endif %}<span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="cm-button cm-button--quiet" href="?tab={{ tab }}&amp;q={{ q|urlencode }}&amp;access={{ access }}&amp;page={{ page_obj.next_page_number }}" aria-label="Keyingi sahifa"><i class="bi bi-chevron-right"></i></a>{% endif %}</div></footer>
+    </section>
     {% endif %}
-    </tr>{% empty %}<tr><td colspan="4">Hozircha ma'lumot yo'q.</td></tr>{% endfor %}
-    </tbody>
-</table></div></div>
-{% if page_obj.has_other_pages %}
-<nav class="d-flex gap-3 align-items-center mt-3" aria-label="Sahifalar">
-    {% if page_obj.has_previous %}<a href="?tab={{ tab }}&amp;q={{ q|urlencode }}&amp;page={{ page_obj.previous_page_number }}">← Oldingi</a>{% endif %}
-    <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}<a href="?tab={{ tab }}&amp;q={{ q|urlencode }}&amp;page={{ page_obj.next_page_number }}">Keyingi →</a>{% endif %}
-</nav>
-{% endif %}
-{% endif %}
-{% endif %}
+    {% endif %}
+</section>
 {% endblock %}

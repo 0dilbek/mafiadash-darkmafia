@@ -1,8 +1,6 @@
-import re
-
 from django import forms
 
-from .cinema_models import CinemaMovie, CinemaPlan
+from .cinema_models import CinemaPlan
 
 
 class CinemaModelForm(forms.ModelForm):
@@ -20,18 +18,3 @@ class CinemaPlanForm(CinemaModelForm):
         model = CinemaPlan
         fields = ("price_diamonds", "duration_days", "is_enabled")
         labels = {"is_enabled": "Pulli obuna savdosini yoqish"}
-
-
-class CinemaMovieForm(CinemaModelForm):
-    message_text = forms.CharField(label="Kino xabari", max_length=4096, required=False, widget=forms.Textarea)
-
-    class Meta:
-        model = CinemaMovie
-        fields = ("code", "file_id", "message_text")
-        labels = {"code": "Kino kodi", "file_id": "Telegram video file_id"}
-
-    def clean_code(self):
-        code = self.cleaned_data["code"].strip().casefold()
-        if not re.fullmatch(r"[a-z0-9_-]{1,64}", code):
-            raise forms.ValidationError("Kod 1–64 ta lotin harfi, raqam, '_' yoki '-' belgisidan iborat bo'lsin.")
-        return code

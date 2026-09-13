@@ -281,6 +281,7 @@
             .page-header h1 { font-size: 1.15rem; }
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
@@ -336,7 +337,7 @@
             </a>
         </div>
         <div class="nav-item">
-            <a href="{% url 'cinema' %}" class="nav-link {% if request.resolver_match.url_name == 'cinema' or request.resolver_match.url_name == 'cinema_movie_add' or request.resolver_match.url_name == 'cinema_movie_edit' or request.resolver_match.url_name == 'cinema_movie_delete' %}active{% endif %}">
+            <a href="{% url 'cinema' %}" class="nav-link {% if request.resolver_match.url_name == 'cinema' %}active{% endif %}">
                 <i class="bi bi-film"></i> Dark Cinema
             </a>
         </div>
