@@ -1,7 +1,11 @@
 from django.urls import path
-from . import views
+from . import views, cinema_views
 
 urlpatterns = [
+    path('cinema/', cinema_views.cinema_dashboard, name='cinema'),
+    path('cinema/movies/add/', cinema_views.cinema_movie, name='cinema_movie_add'),
+    path('cinema/movies/<int:pk>/', cinema_views.cinema_movie, name='cinema_movie_edit'),
+    path('cinema/movies/<int:pk>/delete/', cinema_views.cinema_movie_delete, name='cinema_movie_delete'),
     # Dashboard
     path('', views.dashboard, name='dashboard'),
     path('api/chart-data/', views.dashboard_chart_data, name='chart_data'),

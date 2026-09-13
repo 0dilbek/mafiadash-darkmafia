@@ -825,3 +825,7 @@ class DiamondPriceSetting(models.Model):
 
     def __str__(self):
         return f"{self.key}: {self.amount}"
+
+
+# Shared Dark Cinema tables (schema is owned by the cinema bot).
+from .cinema_models import (CinemaMovie, CinemaChannel, CinemaJoinRequest, CinemaPlan, CinemaSubscription, CinemaPurchase)

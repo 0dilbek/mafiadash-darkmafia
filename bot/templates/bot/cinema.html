@@ -1,0 +1,85 @@
+{% extends 'bot/base.html' %}
+{% block title %}Dark Cinema — MafiaDash{% endblock %}
+{% block content %}
+<div class="page-header"><h1><i class="bi bi-film"></i> Dark Cinema</h1><p>Kinolar, kanallar va olmosga olinadigan obunalar.</p></div>
+{% if storage_error %}
+<div class="alert alert-warning">Cinema ma'lumotlari hozir mavjud emas. Bazaga ulanish va Cinema bot migratsiyalarini tekshiring.</div>
+{% else %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ movie_count }}</div><div class="label">Kinolar</div></div></div>
+    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ channel_count }}</div><div class="label">Majburiy kanallar</div></div></div>
+    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ active_count }}</div><div class="label">Faol obunachilar</div></div></div>
+    <div class="col-6 col-xl-3"><div class="stat-card"><div class="value">{{ revenue }} 💎</div><div class="label">Obunalardan tushgan olmos</div></div></div>
+</div>
+<nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Cinema menyusi">
+    <a class="btn {% if tab == 'settings' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=settings">Obuna sozlamalari</a>
+    <a class="btn {% if tab == 'movies' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=movies">Kinolar</a>
+    <a class="btn {% if tab == 'channels' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=channels">Kanallar</a>
+    <a class="btn {% if tab == 'subscriptions' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=subscriptions">Obunachilar</a>
+    <a class="btn {% if tab == 'purchases' %}btn-primary{% else %}btn-outline-light{% endif %}" href="?tab=purchases">Xaridlar</a>
+</nav>
+{% if tab == 'settings' %}
+<div class="tg-card p-4" style="max-width:720px">
+    <h2 class="h5">Kanallarga qo'shilmasdan kino ko'rish</h2>
+    <p>To'lov foydalanuvchining Mafia botdagi olmos balansidan bir marta olinadi. Faol obuna davomida majburiy kanallarga qo'shilish talab qilinmaydi.</p>
+    <form method="post" action="{% url 'cinema' %}">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+        <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label><br>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger" role="alert">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Saqlash</button>
+    </form>
+    <p class="mt-3 mb-0">O'zgarishlar yangi xaridlarga amal qiladi. Oldin sotib olingan obunalarning muddati saqlanadi. Savdoni o'chirish faol obunalarni bekor qilmaydi.</p>
+</div>
+{% else %}
+<div class="d-flex flex-wrap gap-3 justify-content-between mb-3">
+    {% if tab != 'channels' %}
+    <form method="get" class="d-flex gap-2">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <input class="form-control" type="search" name="q" value="{{ q }}" aria-label="Qidirish" placeholder="{% if tab == 'movies' %}Kino kodi yoki matni{% else %}Ism yoki Telegram ID{% endif %}">
+        <button class="btn btn-outline-light" type="submit">Qidirish</button>
+    </form>
+    {% endif %}
+    {% if tab == 'movies' %}<a class="btn btn-primary" href="{% url 'cinema_movie_add' %}">+ Kino qo'shish</a>{% endif %}
+</div>
+{% if tab == 'channels' %}<p>Kanallarni qo'shish, rejimini almashtirish va o'chirish Cinema botning admin panelida bajariladi. Zayavka soni bot qayd etgan so'rovlarni bildiradi.</p>{% endif %}
+<div class="tg-card"><div class="tg-table-wrap"><table class="tg-table">
+    <thead><tr>
+    {% if tab == 'movies' %}<th>Kod</th><th>Matn</th><th>So'rovlar</th><th>Amallar</th>
+    {% elif tab == 'channels' %}<th>Kanal</th><th>ID</th><th>Rejim</th><th>Zayavkalar</th>
+    {% elif tab == 'subscriptions' %}<th>Foydalanuvchi</th><th>Balans</th><th>Muddati</th><th>Holati</th>
+    {% else %}<th>Foydalanuvchi</th><th>To'langan olmos</th><th>Muddat</th><th>To'lov vaqti</th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for row in rows %}<tr>
+    {% if tab == 'movies' %}
+        <td><code>{{ row.code }}</code></td><td>{{ row.message_text|truncatechars:90 }}</td><td>{{ row.request_count }}</td>
+        <td><a href="{% url 'cinema_movie_edit' row.pk %}">Tahrirlash</a> · <a href="{% url 'cinema_movie_delete' row.pk %}">O'chirish</a></td>
+    {% elif tab == 'channels' %}
+        <td><a href="{{ row.invite_link }}" target="_blank" rel="noopener noreferrer">{{ row.title }}</a></td><td>{{ row.chat_id }}</td>
+        <td>{% if row.accepts_join_requests %}Zayavka yoki a'zolik{% else %}A'zolik{% endif %}</td><td>{{ row.request_total }}</td>
+    {% elif tab == 'subscriptions' %}
+        <td><a href="{% url 'user_detail' row.user.id %}">{{ row.user.full_name|default:row.user.user_id }}</a><br><small>{{ row.user.user_id }}</small></td>
+        <td>{{ row.user.profile.diamond|default:0 }} 💎</td><td>{{ row.expires_at|date:'d.m.Y H:i' }}</td><td>{% if row.expires_at > now %}Faol{% else %}Tugagan{% endif %}</td>
+    {% else %}
+        <td><a href="{% url 'user_detail' row.user.id %}">{{ row.user.full_name|default:row.user.user_id }}</a><br><small>{{ row.user.user_id }}</small></td>
+        <td>{{ row.price_diamonds }} 💎</td><td>{{ row.duration_days }} kun</td><td>{{ row.paid_at|date:'d.m.Y H:i' }}</td>
+    {% endif %}
+    </tr>{% empty %}<tr><td colspan="4">Hozircha ma'lumot yo'q.</td></tr>{% endfor %}
+    </tbody>
+</table></div></div>
+{% if page_obj.has_other_pages %}
+<nav class="d-flex gap-3 align-items-center mt-3" aria-label="Sahifalar">
+    {% if page_obj.has_previous %}<a href="?tab={{ tab }}&amp;q={{ q|urlencode }}&amp;page={{ page_obj.previous_page_number }}">← Oldingi</a>{% endif %}
+    <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a href="?tab={{ tab }}&amp;q={{ q|urlencode }}&amp;page={{ page_obj.next_page_number }}">Keyingi →</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

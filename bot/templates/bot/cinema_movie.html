@@ -1,0 +1,19 @@
+{% extends 'bot/base.html' %}
+{% block title %}Cinema kino — MafiaDash{% endblock %}
+{% block content %}
+<div class="page-header"><h1>{% if confirm_delete %}Kinoni o'chirish{% elif movie %}Kinoni tahrirlash{% else %}Kino qo'shish{% endif %}</h1></div>
+<div class="tg-card p-4" style="max-width:760px">
+{% if confirm_delete %}
+    <p><strong>{{ movie.code }}</strong> kodli kino o'chirilsinmi?</p>
+    <form method="post">{% csrf_token %}<button type="submit" class="btn btn-danger">Ha, o'chirish</button></form>
+{% else %}
+    <form method="post">
+        {% csrf_token %}{{ form.non_field_errors }}
+        {% for field in form %}<div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label><br>{{ field }}{% for error in field.errors %}<div class="text-danger" role="alert">{{ error }}</div>{% endfor %}</div>{% endfor %}
+        <p>Video faylini Cinema botning admin panelidan ham yuklash mumkin. Bu yerda aynan Cinema bot olgan video file_id ishlatiladi.</p>
+        <button type="submit" class="btn btn-primary">Saqlash</button>
+    </form>
+{% endif %}
+<a class="d-inline-block mt-3" href="{% url 'cinema' %}?tab=movies">← Kinolarga qaytish</a>
+</div>
+{% endblock %}
