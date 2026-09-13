@@ -1,6 +1,6 @@
 # Dark Cinema integratsiyasi
 
-`/panel/cinema/` menyusi staff/superuser adminlarga ochiq. U yerda pulli obuna narxi,
+`/panel/cinema/` menyusi dashboardga Django login orqali kirgan akkauntlarga ochiq. U yerda pulli obuna narxi,
 kunlar soni va savdo holati sozlanadi. Kinolarni boshqarish, kanallar va zayavkalar
 sonini ko'rish, obunachilar va to'lov tarixini tekshirish ham shu menyuda.
 

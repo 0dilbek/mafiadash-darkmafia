@@ -22,7 +22,7 @@ class CinemaDashboardTests(TransactionTestCase):
         with connection.schema_editor() as editor:
             for model in self.shared_models:
                 editor.create_model(model)
-        self.admin = get_user_model().objects.create_user(username="cinemaadmin", password="test", is_staff=True)
+        self.admin = get_user_model().objects.create_user(username="cinemaadmin", password="test", is_staff=False, is_superuser=False)
         self.client.force_login(self.admin)
         self.plan = CinemaPlan.objects.create(pk=1, price_diamonds=100, duration_days=30)
 
@@ -31,15 +31,34 @@ class CinemaDashboardTests(TransactionTestCase):
             for model in reversed(self.shared_models):
                 editor.delete_model(model)
 
-    def test_anonymous_and_nonstaff_cannot_read_or_change_plan(self):
+    def test_anonymous_and_telegram_only_sessions_cannot_access_cinema(self):
         self.client.logout()
-        self.assertEqual(self.client.get(reverse("cinema")).status_code, 302)
-        normal = get_user_model().objects.create_user(username="normal", password="test")
-        self.client.force_login(normal)
-        self.assertEqual(self.client.get(reverse("cinema")).status_code, 403)
-        self.assertEqual(self.client.post(reverse("cinema"), {"price_diamonds": 1, "duration_days": 1}).status_code, 403)
+        movie = CinemaMovie.objects.create(code="42", file_id="file")
+        urls = [reverse("cinema"), reverse("cinema_movie_add"),
+                reverse("cinema_movie_edit", args=[movie.pk]),
+                reverse("cinema_movie_delete", args=[movie.pk])]
+        for telegram_session in (False, True):
+            if telegram_session:
+                session = self.client.session
+                session["tg_authenticated"] = True
+                session.save()
+            for url in urls:
+                for method in (self.client.get, self.client.post):
+                    with self.subTest(url=url, method=method.__name__, telegram_session=telegram_session):
+                        response = method(url)
+                        self.assertEqual(response.status_code, 302)
+                        self.assertIn("/panel/login/", response.url)
         self.plan.refresh_from_db()
         self.assertEqual(self.plan.price_diamonds, 100)
+        self.assertTrue(CinemaMovie.objects.filter(pk=movie.pk).exists())
+
+    def test_dashboard_account_without_staff_flag_sees_menu_and_can_open_it(self):
+        self.assertFalse(self.admin.is_staff)
+        self.assertFalse(self.admin.is_superuser)
+        response = self.client.get(reverse("cinema"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'href="' + reverse("cinema") + '" class="nav-link active"')
+        self.assertContains(response, 'bi bi-film')
 
     def test_settings_save_to_shared_table_and_keep_active_subscriptions(self):
         user = User.objects.create(user_id=777, full_name="Viewer", mention="Viewer")

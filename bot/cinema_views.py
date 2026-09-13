@@ -1,17 +1,15 @@
 import logging
-from functools import wraps
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import DatabaseError, IntegrityError, transaction
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from .auth import admin_required
 from .cinema_forms import CinemaMovieForm, CinemaPlanForm
 from .cinema_models import (
     CinemaChannel, CinemaJoinRequest, CinemaMovie, CinemaPlan, CinemaPurchase, CinemaSubscription,
@@ -21,17 +19,7 @@ from .cinema_models import (
 logger = logging.getLogger(__name__)
 
 
-def cinema_admin_required(view):
-    @login_required
-    @wraps(view)
-    def wrapped(request, *args, **kwargs):
-        if not (request.user.is_staff or request.user.is_superuser):
-            return HttpResponseForbidden("Bu menyu faqat administratorlar uchun.")
-        return view(request, *args, **kwargs)
-    return wrapped
-
-
-@cinema_admin_required
+@admin_required
 @require_http_methods(["GET", "POST"])
 def cinema_dashboard(request):
     tab = request.GET.get("tab", "settings")
@@ -89,7 +77,7 @@ def cinema_dashboard(request):
     return render(request, "bot/cinema.html", context, status=status)
 
 
-@cinema_admin_required
+@admin_required
 @require_http_methods(["GET", "POST"])
 def cinema_movie(request, pk=None):
     movie = get_object_or_404(CinemaMovie, pk=pk) if pk is not None else None
@@ -110,7 +98,7 @@ def cinema_movie(request, pk=None):
                   status=400 if request.method == "POST" else 200)
 
 
-@cinema_admin_required
+@admin_required
 @require_http_methods(["GET", "POST"])
 def cinema_movie_delete(request, pk):
     movie = get_object_or_404(CinemaMovie, pk=pk)

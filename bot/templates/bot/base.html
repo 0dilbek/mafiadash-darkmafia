@@ -336,11 +336,11 @@
             </a>
         </div>
         <div class="nav-item">
-            {% if request.user.is_staff or request.user.is_superuser %}
             <a href="{% url 'cinema' %}" class="nav-link {% if request.resolver_match.url_name == 'cinema' or request.resolver_match.url_name == 'cinema_movie_add' or request.resolver_match.url_name == 'cinema_movie_edit' or request.resolver_match.url_name == 'cinema_movie_delete' %}active{% endif %}">
                 <i class="bi bi-film"></i> Dark Cinema
             </a>
-            {% endif %}
+        </div>
+        <div class="nav-item">
             <a href="{% url 'diamond_price_settings' %}" class="nav-link {% if request.resolver_match.url_name == 'diamond_price_settings' %}active{% endif %}">
                 <i class="bi bi-gem"></i> Narx sozlamalari
             </a>
