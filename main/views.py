@@ -345,6 +345,7 @@ _ROLE_META = {
     'SEHRGAR':                {'icon': 'bi-brilliance',                'team': 'neutral', 'label': 'Sehrgar'},
     'KIMYOGAR':               {'icon': 'bi-radioactive',               'team': 'neutral', 'label': 'Kimyogar'},
     'MINIOR':                 {'icon': 'bi-skull-fill',                'team': 'neutral', 'label': 'Minior'},
+    'FITNACHI':               {'icon': 'bi-emoji-smile-upside-down-fill', 'team': 'neutral', 'label': 'Fitnachi'},
     'VAMPIR':                 {'icon': 'bi-moon-stars-fill',           'team': 'neutral', 'label': 'Vampir'},
 }
 
@@ -373,6 +374,7 @@ _ROLE_STR_TO_KEY = {
     '🤡 Joker':              'JOKER',
     '☠️  Minior':            'MINIOR',
     '👨‍🔬 Kimyogar':   'KIMYOGAR',
+    '😈 Fitnachi':           'FITNACHI',
     '🧛🏻 Vampir':           'VAMPIR',
 }
 

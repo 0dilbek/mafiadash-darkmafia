@@ -60,6 +60,7 @@ PRICE_DEFINITIONS = (
     _price("active_role_kimyogar", "👨‍🔬 Kimyogar", "Faol rollar", "diamond", 6),
     _price("active_role_ovchi", "🥷 Убийца", "Faol rollar", "diamond", 5),
     _price("active_role_vampir", "🧛🏻 Vampir", "Faol rollar", "diamond", 5),
+    _price("active_role_fitnachi", "😈 Fitnachi", "Faol rollar", "diamond", 3),
     _price("active_role_janob", "🎖 Janob", "Faol rollar", "diamond", 3),
     _price("active_role_sehrgar", "🧙 Sehrgar", "Faol rollar", "diamond", 3),
     _price("active_role_komissar", "🕵🏼 Komissar katani", "Faol rollar", "diamond", 2),

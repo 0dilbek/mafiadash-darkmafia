@@ -56,6 +56,7 @@ class RoleNames:
     JOKER = "🤡 Joker"
     MINIOR = "☠️  Minior"
     KIMYOGAR = "👨‍🔬 Kimyogar"
+    FITNACHI = "😈 Fitnachi"
     VAMPIR = "🧛🏻 Vampir"
 
 ROLE_TEAMS = {
@@ -73,6 +74,7 @@ ROLE_TEAMS = {
     'ADVOKAT':  'mafia',
     'OVCHI':    'mafia',
     'JURNALIST':'mafia',
+    'FITNACHI': 'yakka',
     'AFERIST':  'yakka',
     'GAZABDOR': 'yakka',
     'JOKER':    'yakka',
@@ -90,7 +92,7 @@ DEFAULT_ROLE_ORDER = [
     'KOLDUN',    'DAYDI',     'MAFIA',     'KEZUVCHI',
     'BORI',      'AFSUNGAR',  'FUQARO',    'SUIDSID',
     'ADVOKAT',   'QOTIL',     'FUQARO',    'JANOB',
-    'JURNALIST', 'AFERIST',   'FUQARO',    'SEHRGAR',
+    'JURNALIST', 'AFERIST',   'FITNACHI',    'SEHRGAR',
     'AFSUNGAR',  'SERJANT',   'MAFIA',     'GAZABDOR',
     'OVCHI',     'BORI',      'MINIOR',    'KIMYOGAR',
     'AFSUNGAR',  'JOKER',
@@ -131,6 +133,8 @@ def _get_group_max_players(chat_id):
 def _validate_role_order(roles):
     """Har bir o'yinchilar sonida mafia < tinch bo'lishini tekshiradi."""
     errors = []
+    if roles.count('FITNACHI') > 1:
+        errors.append("Fitnachi bir o'yinda faqat bitta bo'lishi mumkin.")
     for n in range(4, len(roles) + 1):
         sl = roles[:n]
         mafia = sum(1 for r in sl if ROLE_TEAMS.get(r) == 'mafia')
@@ -1051,4 +1055,5 @@ def group_role_order(request):
         'default_roles_json': _json.dumps(DEFAULT_ROLE_ORDER),
         'role_teams_json': _json.dumps(ROLE_TEAMS),
         'role_names_json': _json.dumps(role_names_map),
+        'role_options': list(role_names_map.items()),
     })
